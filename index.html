@@ -1,0 +1,791 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline' https://cdnjs.cloudflare.com; worker-src blob: https://cdnjs.cloudflare.com; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src data: blob:; connect-src https:; base-uri 'none'; form-action 'none'; object-src 'none'">
+<meta name="referrer" content="no-referrer">
+<meta name="description" content="HireProof — privacy-first resume screening that verifies the work, never the person.">
+<title>HireProof — Screening that verifies the work, never the person</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;1,8..60,400;1,8..60,500&family=Manrope:wght@400;500;600;700&display=swap');
+:root{
+  --ivory:#F7F4EC;--paper:#FDFBF7;--vellum:#FAF7F0;
+  --ink:#101111;--ink2:#3A3733;--mute:#76706A;
+  --hair:#E3DCCF;--hair2:#EDE8DE;
+  --brand:#501E21;--brand-dk:#3A1416;--tint:#F1ECE3;--active:#ECE4D4;
+  --gold:#A6824A;--gold-soft:#EEE4D1;--gold-text:#7A5C2B;--gold-lt:#D8BF8C;
+  --on-brand:#FBF7F0;
+  --serif:'Source Serif 4','Tiempos Text',Georgia,serif;
+  --ui:'Manrope','Segoe UI',system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+html{background:var(--ivory)}
+body{margin:0;font:14.5px/1.6 var(--ui);color:var(--ink);-webkit-font-smoothing:antialiased;
+  background:var(--ivory) url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .40 0 0 0 0 .36 0 0 0 0 .28 0 0 0 .03 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>")}
+::selection{background:var(--brand);color:var(--on-brand)}
+
+/* masthead */
+.top{display:flex;align-items:center;gap:28px;padding:20px 44px;background:var(--brand);border-bottom:1px solid var(--brand-dk)}
+.brand{display:flex;align-items:flex-start;gap:6px;white-space:nowrap}
+.brand .word{font-family:var(--serif);font-size:30px;font-weight:500;line-height:1;letter-spacing:-.01em;color:var(--gold-lt)}
+.brand .spark{color:var(--gold-lt);font-size:11px;margin-top:-2px}
+.tagline{flex:1;font-family:var(--serif);font-style:italic;font-size:16.5px;color:#EDE5DA;border-left:1px solid rgba(237,229,218,.28);padding-left:24px}
+.session{font-size:11.5px;color:rgba(237,229,218,.75);text-align:right;letter-spacing:.02em}
+.session b{color:var(--on-brand);font-weight:600}
+.link{background:none;border:none;color:var(--brand);font:600 11.5px var(--ui);cursor:pointer;text-decoration:underline;text-underline-offset:3px;padding:0;margin-left:12px;letter-spacing:.04em}
+.top .link{color:var(--gold-lt)}.top .link:hover{color:var(--on-brand)}
+
+/* demo bar */
+.demobar{display:flex;align-items:center;gap:16px;flex-wrap:wrap;padding:10px 44px;background:var(--gold-soft);border-bottom:1px solid var(--hair);font-size:12.5px;color:var(--ink2)}
+.demobar b{font:700 10.5px var(--ui);letter-spacing:.2em;text-transform:uppercase;color:var(--brand)}
+.demobar .link{margin:0 0 0 auto}
+
+/* layout */
+.shell{display:grid;grid-template-columns:236px 1fr}
+.rail{border-right:1px solid var(--hair);padding:34px 26px;position:sticky;top:0;align-self:start;min-height:100vh}
+.rail ol{list-style:none;margin:0;padding:0}
+.rail li{display:grid;grid-template-columns:34px 1fr;padding:12px;margin:0 -12px;cursor:pointer;border-bottom:1px solid var(--hair2);transition:background .15s}
+.rail li .n{font-family:var(--serif);font-style:italic;font-size:17px;color:var(--mute)}
+.rail li b{display:block;font-weight:600;font-size:13.5px;color:var(--ink2)}
+.rail li small{font-size:11.5px;color:var(--mute)}
+.rail li:hover{background:var(--vellum)}
+.rail li:hover b{color:var(--ink)}
+.rail li.on{background:var(--active);box-shadow:inset 3px 0 0 var(--brand);border-bottom-color:var(--hair)}
+.rail li.on b{color:var(--brand);font-weight:700}
+.rail li.on .n{color:var(--brand);font-weight:600}
+.rail li.on small{color:var(--ink2)}
+.rail li.sep,.rail li.sep:hover{height:26px;padding:0;border:none;background:none;box-shadow:none;cursor:default}
+.railnote{margin-top:30px;font-family:var(--serif);font-style:italic;font-size:14.5px;line-height:1.5;color:var(--ink2)}
+.railnote span{display:block;margin-top:10px;font-family:var(--ui);font-style:normal;font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold-text);font-weight:700}
+main{padding:44px 60px 90px;max-width:1140px;width:100%}
+
+/* type */
+.eyebrow{font-size:10.5px;letter-spacing:.24em;text-transform:uppercase;color:var(--gold-text);font-weight:700}
+h1{font-family:var(--serif);font-weight:400;font-size:40px;line-height:1.1;margin:12px 0;letter-spacing:-.015em}
+h1 em{font-style:italic;color:var(--brand)}
+.lead{font-size:15px;color:var(--ink2);max-width:660px;margin:0}
+.ph{margin-bottom:30px}
+h2{font-family:var(--serif);font-weight:400;font-size:22px;margin:0 0 6px}
+.lab{display:block;font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--mute);font-weight:700;margin:20px 0 4px}
+.hint{font-size:12.5px;color:var(--mute);line-height:1.55}
+.note{font-family:var(--serif);font-style:italic;font-size:15.5px;line-height:1.5;color:var(--ink2);border-left:2px solid var(--gold);padding:2px 0 2px 16px;margin:18px 0}
+code{font-size:12.5px;background:var(--gold-soft);padding:1px 5px}
+
+/* surfaces */
+.panel{background:var(--paper);border:1px solid var(--hair);padding:28px 30px;margin-bottom:24px}
+.split{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+.cols{display:grid;grid-template-columns:repeat(3,1fr);gap:0 28px}
+
+/* inputs */
+input,textarea,select{width:100%;background:transparent;border:none;border-bottom:1px solid var(--hair);padding:9px 1px;font:14.5px var(--ui);color:var(--ink);border-radius:0}
+input:focus,select:focus{outline:none;border-bottom-color:var(--brand)}
+input[type=checkbox],input[type=radio]{width:auto;accent-color:var(--brand)}
+textarea{border:1px solid var(--hair);padding:13px 15px;min-height:170px;resize:vertical;background:var(--vellum);line-height:1.6}
+textarea:focus{outline:none;border-color:var(--brand)}
+::placeholder{color:#AFA79A}
+
+/* buttons */
+.btn{font:700 11px var(--ui);letter-spacing:.16em;text-transform:uppercase;padding:13px 22px;border:1px solid var(--brand);background:var(--brand);color:var(--on-brand);cursor:pointer;border-radius:1px;transition:background .18s,color .18s,border-color .18s}
+.btn:hover{background:var(--ink);border-color:var(--ink)}
+.btn:active{transform:translateY(1px)}
+.btn.line{background:transparent;color:var(--brand)}
+.btn.line:hover{background:var(--brand);color:var(--on-brand);border-color:var(--brand)}
+.btn.quiet,.btn.quiet:hover{border:none;background:none}
+.btn.quiet{color:var(--brand);padding:6px 0;text-decoration:underline;text-underline-offset:4px;letter-spacing:.1em}
+.btn.quiet:hover{color:var(--ink)}
+.btn.sm{padding:8px 14px;font-size:10px}
+.btn:disabled{opacity:.35;cursor:not-allowed}
+.btn:focus-visible,.rail li:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.actions{display:flex;gap:16px;flex-wrap:wrap;align-items:center;margin-top:20px}
+.seg{display:inline-flex;border:1px solid var(--brand)}
+.seg button{border:none;background:none;padding:10px 18px;font:700 10.5px var(--ui);letter-spacing:.14em;text-transform:uppercase;cursor:pointer;color:var(--brand);transition:background .15s,color .15s}
+.seg button.on{background:var(--brand);color:var(--on-brand)}
+.seg button:not(.on):hover{background:var(--active)}
+
+/* drop */
+.drop{border:1px dashed var(--gold);padding:46px 20px;text-align:center;cursor:pointer;background:var(--vellum);transition:background .2s}
+.drop.over,.drop:hover{background:var(--gold-soft)}
+.drop .big{font-family:var(--serif);font-size:25px;display:block;margin-bottom:6px}
+
+/* tables */
+table{width:100%;border-collapse:collapse}
+th{font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--mute);font-weight:700;text-align:left;padding:10px 12px;border-bottom:1px solid var(--brand)}
+td{padding:15px 12px;border-bottom:1px solid var(--hair2);vertical-align:top;font-size:13.5px}
+tr.r{cursor:pointer}
+tr.r:hover td{background:var(--vellum)}
+.rank{font-family:var(--serif);font-style:italic;font-size:28px;line-height:1;color:var(--gold)}
+.cid{font-weight:700;letter-spacing:.02em;white-space:nowrap}
+.tag{display:inline-flex;align-items:center;gap:7px;font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;font-weight:700;white-space:nowrap}
+.tag i{width:7px;height:7px;border-radius:50%;display:inline-block}
+.tag.best{color:var(--ink)}.tag.best i{background:var(--ink)}
+.tag.maybe{color:var(--gold-text)}.tag.maybe i{background:var(--gold)}
+.tag.no{color:var(--brand)}.tag.no i{background:var(--brand)}
+.tag.src{color:var(--mute);font-size:9.5px}
+.flag{display:inline-block;font-size:11.5px;padding:2px 8px;margin:6px 6px 0 0;border:1px solid var(--hair);color:var(--ink2);background:var(--vellum)}
+.flag.red{border-color:#D8CDBE;color:var(--brand);background:var(--tint)}
+.flag.amb{border-color:#D9C8A5;color:var(--gold-text);background:var(--gold-soft)}
+.flag.grn{border-color:#BDB6A9;color:var(--ink);background:#E3DED5}
+.detail td{background:var(--vellum);padding:24px 22px}
+.detail ol,.detail ul{margin:6px 0 14px;padding-left:20px}
+.detail li{margin:4px 0}
+.figs{display:grid;grid-template-columns:repeat(6,1fr);border-top:1px solid var(--brand);border-bottom:1px solid var(--hair);margin-bottom:28px}
+.fig{padding:16px 16px 14px;border-right:1px solid var(--hair2)}
+.fig:last-child{border-right:none}
+.fig b{font-family:var(--serif);font-weight:400;font-size:36px;display:block;line-height:1.05}
+.fig span{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--mute);font-weight:700}
+
+/* review */
+.review{display:grid;grid-template-columns:250px 1fr;gap:26px}
+.qlist{border-top:1px solid var(--brand)}
+.qlist div{display:flex;justify-content:space-between;align-items:center;padding:12px 10px;border-bottom:1px solid var(--hair2);cursor:pointer}
+.qlist div:hover{background:var(--vellum)}
+.qlist div.on{background:var(--paper);box-shadow:inset 2px 0 0 var(--brand)}
+.x{border:none;background:none;color:var(--mute);font:400 17px/1 var(--ui);cursor:pointer;padding:0 6px;margin-left:6px;opacity:.55;vertical-align:1px;transition:color .15s,opacity .15s}
+.x:hover,.x:focus-visible{color:var(--brand);opacity:1;outline:none}
+.state{font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;font-weight:700}
+.state.ok{color:var(--ink)}.state.pend{color:var(--gold-text)}.state.warn{color:var(--brand)}
+.doc{white-space:pre-wrap;font:13px/1.7 var(--ui);background:var(--vellum);border:1px solid var(--hair);padding:20px 22px;max-height:480px;overflow:auto}
+mark.rd{background:var(--gold-soft);color:#5E4A24;padding:0 4px;font-weight:700;font-size:11px;letter-spacing:.05em}
+mark.sus{background:#F3EBDC;color:var(--brand);padding:0 2px;box-shadow:inset 0 -1px 0 var(--brand)}
+.sus-row{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:9px 0;border-bottom:1px solid var(--hair2);font-size:13px}
+.sus-row small{display:block;color:var(--mute);font-size:11.5px}
+
+/* misc */
+.meter{height:2px;background:var(--hair);margin:22px 0 8px}
+.meter>div{height:100%;background:var(--brand);width:0;transition:width .4s}
+.log{font:12px/1.65 'Cascadia Mono',Consolas,monospace;color:var(--ink2);background:var(--vellum);border:1px solid var(--hair);padding:12px 14px;max-height:200px;overflow:auto;white-space:pre-wrap;margin-top:16px}
+.prov{border-top:1px solid var(--hair);padding:20px 0}
+.prov:first-of-type{border-top:none;padding-top:4px}
+.prov-h{display:flex;justify-content:space-between;align-items:baseline;gap:12px}
+.prov-h b{font-family:var(--serif);font-weight:400;font-size:18px}
+.check{display:flex;gap:12px;align-items:flex-start;margin:14px 0;font-size:14px;line-height:1.5}
+.check input{margin-top:5px}
+.ledger{list-style:none;margin:10px 0 0;padding:0;counter-reset:l}
+.ledger li{display:grid;grid-template-columns:34px 1fr;padding:12px 0;border-bottom:1px solid var(--hair2);counter-increment:l}
+.ledger li::before{content:counter(l,upper-roman);font-family:var(--serif);font-style:italic;color:var(--gold)}
+.ledger b{font-weight:600}
+.modal{position:fixed;inset:0;background:rgba(16,17,17,.4);display:none;align-items:center;justify-content:center;z-index:40;padding:20px}
+.modal.show{display:flex}
+.modal .box{background:var(--paper);max-width:580px;width:100%;padding:36px 38px;border:1px solid var(--hair);box-shadow:0 30px 60px -30px rgba(16,17,17,.45)}
+.toast{position:fixed;bottom:28px;left:50%;transform:translate(-50%,16px);background:var(--ink);color:var(--on-brand);padding:12px 22px;font-size:13px;opacity:0;transition:.3s;z-index:60;pointer-events:none;max-width:90vw}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+.hidden{display:none!important}
+.empty{font-family:var(--serif);font-style:italic;font-size:16px;color:var(--mute);padding:22px 0}
+.stepnav{display:flex;justify-content:space-between;align-items:center;gap:16px;border-top:1px solid var(--hair);margin-top:34px;padding-top:22px}
+@media(max-width:920px){
+  .top{flex-wrap:wrap;padding:18px 20px;gap:12px}.tagline{border:none;padding:0;flex-basis:100%;order:3}
+  .demobar{padding:10px 20px}
+  .shell{grid-template-columns:1fr}.rail{position:static;min-height:0;border-right:none;border-bottom:1px solid var(--hair);padding:14px 20px}
+  .rail ol{display:flex;gap:6px;overflow-x:auto}.rail li{border:none;min-width:140px;margin:0}.rail li.sep,.railnote{display:none}
+  main{padding:28px 20px 70px}.split,.review,.cols{grid-template-columns:1fr}.figs{grid-template-columns:repeat(3,1fr)}h1{font-size:32px}
+}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="brand"><span class="word">HireProof</span><span class="spark">✦</span></div>
+  <div class="tagline">Screening that verifies the work — never the person.</div>
+  <div class="session"><button class="link" id="aiStat" title="Open AI access" style="margin:0 18px 0 0" onclick="tab('keys')">AI: not connected</button><span id="sessInfo">Empty session</span><button class="link" onclick="wipe(true)">Erase session</button></div>
+</header>
+<div class="demobar hidden" id="demoBar"><b>Demo</b><span>Five fictional resumes · AI results are pre-recorded · Uploads and keys are off</span><button class="link" onclick="resetDemo()">Reset demo</button></div>
+
+<div class="shell">
+<aside class="rail">
+  <ol>
+    <li data-t="brief" class="on" onclick="tab('brief')"><span class="n">i</span><span><b>Brief</b><small>The role</small></span></li>
+    <li data-t="cands" onclick="tab('cands')"><span class="n">ii</span><span><b>Candidates</b><small>Add resumes</small></span></li>
+    <li data-t="review" onclick="tab('review')"><span class="n">iii</span><span><b>Privacy review</b><small>Check before sharing</small></span></li>
+    <li data-t="screen" onclick="tab('screen')"><span class="n">iv</span><span><b>Screening</b><small>Run the assessment</small></span></li>
+    <li data-t="short" onclick="tab('short')"><span class="n">v</span><span><b>Shortlist</b><small>Decide who to call</small></span></li>
+    <li class="sep"></li>
+    <li data-t="keys" onclick="tab('keys')"><span class="n">✦</span><span><b>AI access</b><small>Your own keys</small></span></li>
+    <li data-t="gov" onclick="tab('gov')"><span class="n">§</span><span><b>Governance</b><small>Privacy &amp; audit</small></span></li>
+  </ol>
+  <div class="railnote">Nothing here is saved. Close the tab and the session is gone.<span>Held in memory only</span></div>
+</aside>
+
+<main>
+<!-- I · BRIEF -->
+<section id="t-brief">
+  <div class="ph"><div class="eyebrow">Step i · Brief</div><h1>Start with the <em>role</em>, not the resumes.</h1><p class="lead">Paste the job description, then set what really matters. The clearer the brief, the sharper the judgement.</p></div>
+  <div class="panel">
+    <div class="actions" style="margin:0 0 6px;justify-content:space-between"><h2>Job description</h2><button class="btn quiet" onclick="loadDemo()">Try with sample resumes</button></div>
+    <label class="lab">Title</label><input id="jdTitle" placeholder="e.g. Senior Java Developer">
+    <label class="lab">Description</label><textarea id="jdText" placeholder="Paste the job description or post here."></textarea>
+    <div class="actions"><button class="btn" id="autoBtn" onclick="autoJD()">Draft criteria from the JD</button><span class="hint">Uses your connected AI provider (AI access). The job description contains no candidate data. You can also fill in the criteria below yourself.</span></div>
+  </div>
+  <div class="panel">
+    <h2>Criteria</h2>
+    <p class="hint">Separate groups with commas. Use <code>|</code> between synonyms, e.g. <code>Kubernetes|K8s</code>.</p>
+    <label class="lab">Must have</label><input id="jdMust" placeholder="e.g. Java, Spring Boot|Spring, Microservices">
+    <label class="lab">Good to have</label><input id="jdNice" placeholder="e.g. AWS|Azure, Kafka, CI/CD">
+    <div class="cols">
+      <div><label class="lab">Min. experience (yrs)</label><input id="jdMin" type="number" step="0.5" placeholder="3"></div>
+      <div><label class="lab">Max. experience (yrs)</label><input id="jdMax" type="number" step="0.5" placeholder="6"></div>
+      <div><label class="lab">Location</label><input id="jdLoc" placeholder="e.g. Bengaluru|Bangalore"></div>
+      <div><label class="lab">Work mode</label><select id="jdMode"><option>WFO</option><option>Hybrid</option><option>Remote</option></select></div>
+      <div><label class="lab">Engagement</label><input id="jdType" placeholder="e.g. Full-time / Contract, 6 months"></div>
+      <div><label class="lab">Joining</label><label class="check" style="margin:10px 0 0"><input id="jdImm" type="checkbox"> Immediate joiners only</label></div>
+    </div>
+  </div>
+  <div class="panel hidden" id="lensCard"></div>
+</section>
+
+<!-- II · CANDIDATES -->
+<section id="t-cands" class="hidden">
+  <div class="ph"><div class="eyebrow">Step ii · Candidates</div><h1>Resumes are read <em>here</em>, and nowhere else.</h1><p class="lead">Files are opened inside this tab. Names, contact details, links, identity numbers, date of birth, gender, marital status, religion, references and addresses are removed on arrival, and the original text is discarded.</p></div>
+  <p class="note hidden" id="demoUp">Uploads are off in this demo. The full version reads PDF, Word and text files on your own device.</p>
+  <div class="panel" id="upPanel">
+    <div class="drop" id="drop" onclick="$('#fileIn').click()"><span class="big">Drop resumes here</span><span class="hint">PDF, Word (.docx) or plain text · or click to choose</span></div>
+    <input type="file" id="fileIn" multiple accept=".pdf,.docx,.txt" class="hidden">
+    <details style="margin-top:16px"><summary class="hint" style="cursor:pointer">Paste text instead</summary>
+      <label class="lab">Your label (never shared)</label><input id="pasteName" placeholder="e.g. Referral from Priya">
+      <label class="lab">Resume text</label><textarea id="pasteText"></textarea>
+      <div class="actions"><button class="btn line sm" onclick="addPasted()">Add</button></div>
+    </details>
+  </div>
+  <div class="panel"><div class="actions" style="margin:0 0 10px;justify-content:space-between"><h2 id="candCount">Candidates</h2><button class="btn quiet" onclick="clearCands()">Remove all</button></div><div id="candList"></div></div>
+</section>
+
+<!-- III · REVIEW -->
+<section id="t-review" class="hidden">
+  <div class="ph"><div class="eyebrow">Step iii · Privacy review</div><h1>Nothing leaves until <em>you</em> approve it.</h1><p class="lead">Check each redacted resume before it is shared with an AI service. Highlighted items are anything personal that may have slipped through.</p></div>
+  <div class="panel">
+    <div class="split">
+      <div><h2>Level of protection</h2>
+        <div class="seg" style="margin:10px 0 12px"><button id="lvStd" onclick="setLevel('standard')">Standard</button><button id="lvStr" onclick="setLevel('strict')">Strict</button></div>
+        <p class="hint" id="lvHelp"></p></div>
+      <div><h2>Never share</h2><p class="hint">Words hidden from every resume before sharing, such as a client's name or internal project codes. One per line.</p>
+        <textarea id="neverTxt" style="min-height:90px" onchange="saveNever()" placeholder="Client name&#10;Internal project code"></textarea></div>
+    </div>
+  </div>
+  <div class="actions" style="margin:0 0 18px"><button class="btn line sm" onclick="approveClean()">Approve all with nothing to check</button><span class="hint" id="revSummary"></span></div>
+  <div class="review"><div class="qlist" id="qList"></div><div id="revPanel"></div></div>
+</section>
+
+<!-- AI ACCESS (settings) -->
+<section id="t-keys" class="hidden">
+  <div class="ph"><div class="eyebrow">Settings · AI access</div><h1>Bring your <em>own</em> key.</h1><p class="lead">Connect any OpenAI-compatible AI provider with your own key. Type the provider's name or paste your key, and the address fills in by itself. Add several in order of preference; if one reaches its usage limit, screening continues with the next.</p></div>
+  <div class="note hidden" id="keyNote" style="margin:0 0 24px"></div>
+  <p class="note hidden" id="demoKeys">Keys are off in this demo, and the AI results are pre-recorded. In the full version you connect your own key, such as a free Groq key.</p>
+  <div class="panel" id="provPanel">
+    <div id="provList"></div>
+    <div class="actions"><select id="preset" style="width:auto;min-width:240px"><option value="groq">Groq</option><option value="gemini">Google Gemini</option><option value="openrouter">OpenRouter</option><option value="cerebras">Cerebras</option><option value="mistral">Mistral</option><option value="huggingface">Hugging Face</option><option value="openai">OpenAI</option><option value="deepseek">DeepSeek</option><option value="custom">Other OpenAI-compatible provider</option></select><button class="btn line sm" onclick="addP()">Add provider</button><button class="btn quiet" onclick="forgetKeys()">Forget all keys</button></div>
+  </div>
+  <p class="note">Keys live only in this tab's memory and are sent only to the provider they belong to. Only approved, redacted text is shared. Some providers, especially on free plans, may use what you send to improve their services, so check their terms and your organisation's policy before using real candidate data.</p>
+</section>
+
+<!-- IV · SCREEN -->
+<section id="t-screen" class="hidden">
+  <div class="ph"><div class="eyebrow">Step iv · Screening</div><h1>Three ways to <em>assess</em>.</h1><p class="lead" id="scrSummary"></p></div>
+  <div class="panel">
+    <h2>Rules <span class="tag src">&nbsp;Always on · offline</span></h2>
+    <p class="hint" style="margin:6px 0 0">Applied to every resume inside this tab: timeline arithmetic, future dates and gaps, repeated template bullets, copied company descriptions, keyword stuffing, evidence for each must-have, location, and notice norms by employer.</p>
+  </div>
+  <div class="panel">
+    <h2>AI assessment</h2>
+    <p class="hint">Assesses one resume at a time and pauses automatically if a provider's usage limit is reached.</p>
+    <p class="hint" id="aiNote" style="margin:0"></p>
+    <div class="actions"><button class="btn" id="runBtn" onclick="runAI(false)">Assess approved candidates</button><button class="btn line sm" onclick="runAI(true)">Re-assess all</button><button class="btn quiet" onclick="S.stopReq=true">Stop</button></div>
+    <div class="meter"><div id="prog"></div></div><div class="hint" id="progTxt">Not started.</div><div class="hint" id="wait"></div>
+    <div class="log" id="log">Ready.</div>
+  </div>
+  <div class="panel">
+    <h2>Chat hand-off</h2>
+    <p class="hint">Copies the assessment brief, the job description and approved redacted resumes for any AI chat your organisation allows. Paste its CSV reply below.</p>
+    <div class="actions"><label class="hint" style="margin:0">Resumes per batch</label><input id="batchN" type="number" value="8" min="1" style="width:70px"></div>
+    <div class="actions" id="batchBtns"></div>
+    <label class="lab">Paste the CSV reply</label><textarea id="importTxt" style="min-height:110px" placeholder="Candidate_ID,Rank,Verdict,Credibility,…"></textarea>
+    <div class="actions"><button class="btn line sm" onclick="importCSV()">Import results</button></div>
+  </div>
+</section>
+
+<!-- V · SHORTLIST -->
+<section id="t-short" class="hidden">
+  <div class="ph"><div class="eyebrow">Step v · Shortlist</div><h1>Who to call, and <em>what to ask</em>.</h1><p class="lead">Ranked by fit, then credibility, then score, then availability. Open a row for the evidence and two questions built from that candidate's own claims.</p></div>
+<p class="hint" id="shortNote" style="margin:-12px 0 18px"></p>
+  <div class="figs" id="figs"></div>
+  <div class="actions" style="margin:0 0 16px;justify-content:space-between">
+    <div class="actions" style="margin:0"><select id="fltr" style="width:auto;min-width:170px" onchange="S.filter=this.value;renderShort()"><option value="all">All candidates</option><option>Best fit</option><option>Maybe</option><option>Not a fit</option></select>
+      <label class="check" style="margin:0"><input type="checkbox" onchange="S.showIds=this.checked;renderShort()"> Reveal identities on this screen</label></div>
+    <div class="actions" style="margin:0"><button class="btn line sm" onclick="exportCSV(false)">Export anonymous</button><button class="btn sm" onclick="exportCSV(true)">Export with contacts</button></div>
+  </div>
+  <div class="panel" style="padding:8px 18px 18px;overflow-x:auto"><table id="shortTbl"></table></div>
+  <p class="note">HireProof recommends; people decide. A low credibility rating means verify carefully, not reject.</p>
+</section>
+
+<!-- GOVERNANCE -->
+<section id="t-gov" class="hidden">
+  <div class="ph"><div class="eyebrow">Governance</div><h1>Privacy you can <em>explain</em>.</h1><p class="lead">How data moves, the controls in place, and a record of this session's actions, ready for your compliance team.</p></div>
+  <div class="split">
+    <div class="panel"><h2>What leaves this device</h2>
+      <p class="hint" style="margin:0">Flow: Brief → Candidates → Privacy review → Screening → Shortlist. AI access is optional.</p>
+      <ol class="ledger">
+        <li><span><b>Resume files</b> — never. Read and redacted inside this tab.</span></li>
+        <li><span><b>Job description</b> — only when you click Draft criteria, to your AI provider. No candidate data.</span></li>
+        <li><span><b>Redacted resumes</b> — only after you approve them, and only when you run the AI assessment or copy them for a chat.</span></li>
+        <li><span><b>Names and contacts</b> — never shared. Kept in memory for your own exports.</span></li>
+        <li><span><b>API keys</b> — only to their own provider. Never saved.</span></li>
+        <li><span><b>Page resources</b> — document readers and fonts load from public libraries. No candidate data.</span></li>
+      </ol></div>
+    <div class="panel"><h2>Session controls</h2>
+      <label class="lab">Erase automatically after inactivity</label>
+      <select id="idleSel" onchange="S.privacy.idleMin=+this.value;audit('Auto-erase changed',this.value==='0'?'off':this.value+' min')"><option value="15">15 minutes</option><option value="30" selected>30 minutes</option><option value="60">60 minutes</option><option value="0">Off</option></select>
+      <p class="hint" style="margin-top:14px">A warning appears if you try to close the tab with candidates still loaded. Exported files are yours to store and delete under your organisation's retention policy.</p>
+      <div class="actions"><button class="btn line sm" onclick="wipe(true)">Erase session now</button></div></div>
+  </div>
+  <div class="panel"><h2>Applicant privacy notice — sample</h2><p class="hint">A starting point only, not legal advice. Have it reviewed by your legal or compliance team before use.</p>
+    <textarea id="noticeTxt" readonly style="min-height:200px"></textarea>
+    <div class="actions"><button class="btn line sm" onclick="copyText($('#noticeTxt').value,'Notice copied')">Copy notice</button></div></div>
+  <div class="panel"><div class="actions" style="margin:0 0 8px;justify-content:space-between"><h2>Session record</h2><button class="btn line sm" onclick="exportAudit()">Export record</button></div>
+    <p class="hint">Actions only (what happened, when, and to which Candidate ID). No resume content is recorded.</p><div id="auditTbl"></div></div>
+  <p class="note">Under India's DPDP Act, the organisation that collects applicants' data remains responsible for notice, lawful purpose, security, retention and breach handling. HireProof supports data minimisation and security. It doesn't replace your organisation's policies.</p>
+</section>
+</main>
+</div>
+
+<div class="modal" id="attest"><div class="box">
+  <div class="eyebrow">Before anything is shared</div>
+  <h2 style="font-size:26px;margin:10px 0 6px">A short confirmation</h2>
+  <p class="hint">Needed once per session before redacted resumes are sent to an AI service or copied for a chat.</p>
+  <label class="check"><input type="checkbox" class="att"> Applicants have been told how their data is used for this hiring process, or another lawful basis under my organisation's policy applies.</label>
+  <label class="check"><input type="checkbox" class="att"> My organisation permits this AI service for recruitment data, and I have read its data terms.</label>
+  <label class="check"><input type="checkbox" class="att"> I understand the tool recommends and a person makes every hiring decision.</label>
+  <div class="actions"><button class="btn" onclick="confirmAttest()">Confirm and continue</button><button class="btn quiet" onclick="$('#attest').classList.remove('show')">Cancel</button></div>
+</div></div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* =====================================================================
+   DEMO SWITCH — the only line that differs between the two versions.
+   true  = public demo (fictional data, pre-recorded AI, no uploads/keys)
+   false = full working app (your private version)
+   ===================================================================== */
+const DEMO=true;
+
+/* foundations */
+const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
+if(window.pdfjsLib)pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+const PRESETS={
+ groq:{name:'Groq',base:'https://api.groq.com/openai/v1',model:'openai/gpt-oss-120b',getKey:'https://console.groq.com/keys',prefer:[/^openai\/gpt-oss-120b$/,/^openai\/gpt-oss-20b$/,/qwen/i]},
+ gemini:{name:'Google Gemini',base:'https://generativelanguage.googleapis.com/v1beta/openai',model:'',getKey:'https://aistudio.google.com/apikey',prefer:[/^gemini-2\.5-flash$/,/^gemini-[\d.]+-flash$/,/flash/]},
+ openrouter:{name:'OpenRouter',base:'https://openrouter.ai/api/v1',model:'',getKey:'https://openrouter.ai/keys',prefer:[/llama-3\.3-70b-instruct:free$/,/:free$/]},
+ cerebras:{name:'Cerebras',base:'https://api.cerebras.ai/v1',model:'',getKey:'https://cloud.cerebras.ai',prefer:[/gpt-oss-120b/,/llama-3\.3-70b/,/llama/i,/qwen/i]},
+ mistral:{name:'Mistral',base:'https://api.mistral.ai/v1',model:'',getKey:'https://console.mistral.ai/api-keys',prefer:[/^mistral-small-latest$/,/^mistral-medium-latest$/]},
+ huggingface:{name:'Hugging Face',base:'https://router.huggingface.co/v1',model:'',getKey:'https://huggingface.co/settings/tokens',prefer:[/llama-3\.3-70b/i,/qwen/i]},
+ openai:{name:'OpenAI',base:'https://api.openai.com/v1',model:'',getKey:'https://platform.openai.com/api-keys',prefer:[/^gpt-4\.1-mini$/,/^gpt-4o-mini$/]},
+ deepseek:{name:'DeepSeek',base:'https://api.deepseek.com/v1',model:'',getKey:'https://platform.deepseek.com/api_keys',prefer:[/^deepseek-chat$/]},
+ custom:{name:'',base:'',model:''}
+};
+const KEY_SIGS=[[/^gsk_/,'groq'],[/^AIza/,'gemini'],[/^sk-or-/,'openrouter'],[/^csk-/,'cerebras'],[/^hf_/,'huggingface'],[/^sk-proj-/,'openai']];
+const NAME_SIGS=[[/groq/i,'groq'],[/gemini|google/i,'gemini'],[/openrouter|open router/i,'openrouter'],[/cerebras/i,'cerebras'],[/mistral/i,'mistral'],[/hugging/i,'huggingface'],[/deepseek|deep seek/i,'deepseek'],[/openai|open ai|chatgpt|\bgpt\b/i,'openai']];
+const PBASES=Object.values(PRESETS).map(P=>P.base).filter(Boolean),PMODELS=Object.values(PRESETS).map(P=>P.model).filter(Boolean);
+const S={jd:{must:[],nice:[],loc:[]},lens:null,cands:[],providers:[],running:false,stopReq:false,showIds:false,nextId:1,filter:'all',open:null,sel:null,audit:[],keyNote:null,privacy:{level:'standard',never:[],attested:false,idleMin:30}};
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const escRe=s=>s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+const MN=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const nowIdx=()=>{const d=new Date();return d.getFullYear()*12+d.getMonth();};
+const lbl=i=>MN[i%12]+' '+Math.floor(i/12);
+const fmt=n=>String(Math.round(n*10)/10);
+function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),3200);}
+function log(m){const l=$('#log');l.textContent+='\n'+m;l.scrollTop=l.scrollHeight;}
+function audit(ev,detail){S.audit.push({t:new Date(),ev,detail:detail||''});if(!$('#t-gov').classList.contains('hidden'))renderAudit();}
+async function copyText(t,msg){try{await navigator.clipboard.writeText(t);}catch(_){const a=document.createElement('textarea');a.value=t;document.body.appendChild(a);a.select();document.execCommand('copy');a.remove();}toast(msg||'Copied');}
+function tab(n){if(n!=='keys')S.keyNote=null;$$('.rail li[data-t]').forEach(li=>li.classList.toggle('on',li.dataset.t===n));$$('main>section').forEach(s=>s.classList.toggle('hidden',s.id!=='t-'+n));window.scrollTo(0,0);({cands:renderCands,review:renderReview,keys:renderProviders,screen:renderScreen,short:renderShort,gov:renderGov})[n]?.();}
+
+/* brief */
+const splitK=v=>v.split(/,|\n/).map(s=>s.trim()).filter(Boolean);
+function readJD(){S.jd={title:$('#jdTitle').value.trim(),text:$('#jdText').value.trim(),must:splitK($('#jdMust').value),nice:splitK($('#jdNice').value),minExp:parseFloat($('#jdMin').value)||0,maxExp:parseFloat($('#jdMax').value)||0,loc:$('#jdLoc').value.split(/[|,]/).map(s=>s.trim()).filter(Boolean),mode:$('#jdMode').value,type:$('#jdType').value.trim(),immediate:$('#jdImm').checked};return S.jd;}
+function jdBlock(){const j=readJD();let s=`TITLE: ${j.title||'(not given)'}\nJD:\n${(j.text||'(not given)').slice(0,3500)}\nCRITERIA: must-have: ${j.must.join('; ')||'n/a'} | good-to-have: ${j.nice.join('; ')||'n/a'} | experience: ${j.minExp||'?'}-${j.maxExp||'?'} yrs | location: ${j.loc.join('/')||'n/a'} | work mode: ${j.mode} | engagement: ${j.type||'n/a'} | immediate joiners only: ${j.immediate?'yes':'no'}`;if(S.lens){const L=S.lens;s+=`\nEXPERT LENS (${L.domain||'domain'}): proof signals: ${(L.proof_signals||[]).join('; ')} | NOT the same as: ${(L.adjacent_domains||[]).join('; ')} | depth questions: ${(L.depth_questions||[]).join(' / ')}`;}return s;}
+function renderLens(){const c=$('#lensCard');if(!S.lens){c.classList.add('hidden');return;}const L=S.lens,li=a=>(a||[]).map(x=>`<li>${esc(x)}</li>`).join('');c.classList.remove('hidden');c.innerHTML=`<div class="actions" style="margin:0;justify-content:space-between"><h2>The expert's lens — <em style="font-style:italic;color:var(--brand)">${esc(L.domain||'')}</em></h2><button class="btn quiet" onclick="S.lens=null;renderLens()">Remove</button></div><p class="hint">What a genuine practitioner would mention. Used to judge credibility.</p><div class="cols"><div><span class="lab">Proof of real work</span><ul style="padding-left:18px;margin:4px 0">${li(L.proof_signals)}</ul></div><div><span class="lab">Often confused with</span><ul style="padding-left:18px;margin:4px 0">${li(L.adjacent_domains)}</ul></div><div><span class="lab">Depth questions</span><ul style="padding-left:18px;margin:4px 0">${li(L.depth_questions)}</ul></div></div>`;}
+const JD_SYS=`You are a senior recruiter and a hands-on expert in the job's domain. Extract hiring criteria from the JD. Respond with ONLY a JSON object:
+{"title":"","must":["keyword|synonym|abbreviation"],"nice":["..."],"min_exp":number or null,"max_exp":number or null,"location":"city|area|alternate spelling","work_mode":"WFO|Hybrid|Remote","employment_type":"","immediate_only":true or false,"expert_lens":{"domain":"","proof_signals":["6-10 specific things only a real practitioner would mention: modules, transactions, tools, versions, calculations, edge cases"],"adjacent_domains":["areas often confused with this domain but NOT it"],"depth_questions":["4 scenario questions a practitioner answers easily"]}}
+Rules: must and nice are 3-8 short keyword groups each; join synonyms with | ; never put commas inside a group.`;
+async function autoJD(){const t=$('#jdText').value.trim();if(t.length<40)return toast('Paste the job description first');if(DEMO){S.lens=DEMO_LENS;renderLens();return toast('Demo: criteria and expert lens are pre-filled. The full version drafts them from any JD.');}if(needKey('Connect a key to use this.','brief'))return;const b=$('#autoBtn');b.disabled=true;b.textContent='Reading the JD…';S.stopReq=false;try{const j=parseJSON(await llm([{role:'system',content:JD_SYS},{role:'user',content:'JD:\n'+t.slice(0,6000)}],1000));if(j.title)$('#jdTitle').value=j.title;if(Array.isArray(j.must))$('#jdMust').value=j.must.join(', ');if(Array.isArray(j.nice))$('#jdNice').value=j.nice.join(', ');if(j.min_exp!=null)$('#jdMin').value=j.min_exp;if(j.max_exp!=null)$('#jdMax').value=j.max_exp;if(j.location)$('#jdLoc').value=j.location;$('#jdMode').value=/remote/i.test(j.work_mode||'')?'Remote':/hybrid/i.test(j.work_mode||'')?'Hybrid':'WFO';if(j.employment_type)$('#jdType').value=j.employment_type;$('#jdImm').checked=!!j.immediate_only;S.lens=j.expert_lens||null;renderLens();audit('Criteria drafted from JD','AI');toast('Criteria drafted — please review them');}catch(e){toast(e.message);}b.disabled=false;b.textContent='Draft criteria from the JD';}
+
+/* redaction */
+const EMAIL_RE=/[\w.+-]+@[\w-]+\.[\w.-]+/g;
+const PHONE_IN=/(?:\+?91[\s-]*)?(?<!\d)[6-9](?:[\s-]?\d){9}(?!\d)/g;
+const PHONE_INTL=/\+\d{1,3}[\s-]?\(?\d{1,4}\)?(?:[\s-]?\d){6,11}(?!\d)/g;
+const PATTERNS=[
+ [EMAIL_RE,'[EMAIL]'],
+ [/(?:https?:\/\/)?(?:www\.)?(?:[a-z]{2}\.)?(?:linkedin|github)\.com\/\S*/gi,'[LINK]'],
+ [/https?:\/\/\S+/g,'[LINK]'],
+ [/^(\s*(?:linkedin|github)\s*[:\-]).*$/gim,'$1 [LINK]'],
+ [PHONE_IN,'[PHONE]'],[PHONE_INTL,'[PHONE]'],
+ [/(?<!\d)\d{4}[\s-]?\d{4}[\s-]?\d{4}(?!\d)/g,'[ID-NUMBER]'],
+ [/\b[A-Z]{5}\d{4}[A-Z]\b/g,'[PAN]'],
+ [/\b[A-Z]\d{7}\b/g,'[PASSPORT]'],
+ [/^(.*?\b(?:date of birth|d\.?o\.?b\.?)\b).*$/gim,'$1: [REDACTED]'],
+ [/^(\s*(?:gender|sex|marital status|father'?s name|mother'?s name|spouse|nationality|religion|caste|age|languages known|references?)\s*[:\-]).*$/gim,'$1 [REDACTED]'],
+ [/^(\s*(?:permanent |current |residential |present )?address\s*[:\-]).*$/gim,'$1 [REDACTED]'],
+ [/(?<!\d)\d{3}\s?\d{3}(?!\d)(?=\s*$)/gm,'[PIN]'],
+ [/\b(?:male|female|married|unmarried)\b/gi,'[REDACTED]']
+];
+const ROLE=new Set('resume curriculum vitae cv biodata profile summary objective engineer tester test testing qa analyst developer consultant manager lead senior junior software quality automation professional sdet associate specialist executive officer designer architect intern trainee career experience contact details personal information updated final latest new copy doc docx pdf years yrs india name full core banking'.split(' '));
+const STOPW=new Set('work history education skills skill project projects client domain technical key responsibilities achievements certifications languages declaration global bank private limited services solutions systems immediate immediately joiner joiners joining join notice period days months negotiable serving available availability current expected total relevant ctc lpa location mobile email phone carrier objective overview date'.split(' '));
+const GEN_EMAIL=new Set('gmail yahoo outlook hotmail mail email info hr jobs careers resume official work contact example'.split(' '));
+function cleanLine(l){l=l.split(/\||•|·|✉|☎|📧|📱|\bE-?mail\b|\bMobile\b|\bPh(?:one)?\b|\bContact\b|\bLoc(?:ation)?\b|@|\+\d|\d{5}/i)[0];l=l.replace(/^\s*(?:full\s*)?name\s*[:\-]\s*/i,'');return l.replace(/^[\s:,\-]+|[\s:,\-]+$/g,'');}
+function looksLikeName(l){const w=l.split(/\s+/).map(x=>x.replace(/\./g,'')).filter(Boolean);if(w.length<1||w.length>5)return[];if(!w.every(x=>/^[A-Za-z]+$/.test(x)))return[];if(w.some(x=>ROLE.has(x.toLowerCase())))return[];return w.filter(x=>x.length>=3);}
+function nameTokens(text,file){const tk=new Set(),L=text.split('\n').filter(l=>l.trim());for(const l of L.slice(0,6)){const f=looksLikeName(cleanLine(l));if(f.length){f.forEach(x=>tk.add(x));break;}}for(const l of L){const m=l.match(/^\s*(?:full\s*)?name\s*[:\-]\s*(.+)$/i);if(m)looksLikeName(cleanLine(m[1])).forEach(x=>tk.add(x));}(text.match(EMAIL_RE)||[]).forEach(em=>em.split('@')[0].split(/[._\-\d+]+/).forEach(w=>{if(w.length>=3&&/^[A-Za-z]+$/.test(w)&&!GEN_EMAIL.has(w.toLowerCase()))tk.add(w);}));const top=L.slice(0,6).join(' ').toLowerCase();file.replace(/\.[^.]+$/,'').split(/[\s_\-.()]+/).forEach(w=>{if(w.length>=3&&/^[A-Za-z]+$/.test(w)&&!ROLE.has(w.toLowerCase())&&top.includes(w.toLowerCase()))tk.add(w);});return[...tk].filter(t=>!ROLE.has(t.toLowerCase()));}
+function redact(text,file){const tk=nameTokens(text,file);for(const [re,rep] of PATTERNS)text=text.replace(re,rep);tk.sort((a,b)=>b.length-a.length).forEach(t=>{text=text.replace(new RegExp('(?<![A-Za-z])'+escRe(t)+'(?![A-Za-z])','gi'),'[NAME]');});return text.replace(/\n{3,}/g,'\n\n').trim();}
+const CITY_RE=/\b(bengaluru|bangalore|whitefield|chennai|hyderabad|secunderabad|pune|mumbai|navi mumbai|thane|new delhi|delhi|noida|gurugram|gurgaon|faridabad|ghaziabad|kolkata|ahmedabad|surat|vadodara|jaipur|kochi|cochin|thiruvananthapuram|trivandrum|coimbatore|madurai|mysuru|mysore|mangaluru|mangalore|indore|bhopal|chandigarh|mohali|lucknow|bhubaneswar|nagpur|visakhapatnam|vizag|vijayawada|nashik|kolhapur|patna|ranchi|guwahati|dehradun)\b/gi;
+function strictify(t){BIG.forEach(([re])=>{t=t.replace(new RegExp(re,'gi'),'[LARGE IT FIRM]');});t=t.replace(/\b(?:[A-Z][A-Za-z&.'\-]*\s+){1,4}(?:Pvt\.?\s*Ltd\.?|Private\s+Limited|Limited|Ltd\.?|Inc\.?|LLC|LLP|Technologies|Tech|Solutions|Consulting|Consultancy|Infotech|Softech|Labs|Webworks|IT Services)\b/g,'[EMPLOYER]');t=t.replace(/\b(?:[A-Z][A-Za-z.&'\-]*\s+){0,6}(?:University|College|Institute|School|Academy|Vidyalaya|Mahavidyalaya)\b(?:\s+of\s+(?:[A-Z][A-Za-z]*\s?){1,4})?/g,'[INSTITUTION]');t=t.replace(/\b(?:VTU|JNTU[A-Z]?|RGTU|SPPU|KBCNMU|YCMOU|DCRUST|IIT|NIT|BITS)\b/g,'[INSTITUTION]');t=t.replace(CITY_RE,'[CITY]');return t.replace(/\[EMPLOYER\](?:[\s,]*\[EMPLOYER\])+/g,'[EMPLOYER]');}
+function shareText(c){let t=c.red;[...S.privacy.never,...c.extraHide].filter(Boolean).sort((a,b)=>b.length-a.length).forEach(w=>{t=t.replace(new RegExp('(?<![A-Za-z0-9])'+escRe(w)+'(?![A-Za-z0-9])','gi'),'[HIDDEN]');});if(S.privacy.level==='strict')t=strictify(t);return t;}
+function suspects(t){const out=[],add=(term,why)=>{term=term.trim();if(term.length>2&&!out.some(o=>o.term===term))out.push({term,why});};
+ (t.match(/(?<![\w\[])\d{6,}(?![\w\]])/g)||[]).forEach(x=>add(x,'Long number — could be an ID or phone'));
+ (t.match(/\S+@\S+|www\.\S+/gi)||[]).forEach(x=>add(x,'Looks like an address or link'));
+ (t.match(/\b(?:Mr|Mrs|Ms|Dr|Shri|Smt)\.?\s+[A-Z][a-z]+(?:\s+[A-Z][a-z]+)?/g)||[]).forEach(x=>add(x,'A named person — a reference or manager?'));
+ (t.match(/\b(?:s\/o|d\/o|w\/o|son of|daughter of|wife of)\b[^\n]{0,40}/gi)||[]).forEach(x=>add(x,'Family detail'));
+ (t.match(/\b(?:hindu|muslim|christian|sikh|jain|buddhist|brahmin|caste)\b/gi)||[]).forEach(x=>add(x,'Sensitive personal detail'));
+ (t.match(/\b(?:aged?)\s*[:\-]?\s*\d{2}\b/gi)||[]).forEach(x=>add(x,'Age'));
+ t.split('\n').filter(l=>l.trim()).slice(0,5).forEach(l=>(l.match(/\b[A-Za-z][A-Za-z._]{2,}\d{2,}\b/g)||[]).forEach(x=>add(x,'Looks like a username or handle')));
+ t.split('\n').filter(l=>l.trim()).slice(0,4).forEach(l=>(l.match(/\b[A-Z][a-z]{2,}(?:\s+[A-Z][a-z]{2,}){1,2}\b/g)||[]).forEach(x=>{if(!x.split(/\s+/).some(w=>ROLE.has(w.toLowerCase())||STOPW.has(w.toLowerCase())))add(x,'Capitalised words near the top — possibly a name');}));
+ return out;}
+function highlight(t,sus){let h=esc(t).replace(/\[(?:NAME|EMAIL|PHONE|LINK|ID-NUMBER|PAN|PASSPORT|REDACTED|PIN|HIDDEN|EMPLOYER|INSTITUTION|CITY|LARGE IT FIRM)\]/g,m=>`<mark class="rd">${m}</mark>`);sus.forEach(s=>{const e=esc(s.term);h=h.split(e).join(`<mark class="sus" title="${esc(s.why)}">${e}</mark>`);});return h;}
+const isApproved=c=>c.approved&&(S.privacy.level==='strict'||c.approvedLevel==='standard');
+
+/* files */
+async function extract(f,ext){if(ext==='txt')return await f.text();const buf=await f.arrayBuffer();if(ext==='docx'){if(!window.mammoth)throw new Error('Word reader unavailable — check your connection');return (await mammoth.extractRawText({arrayBuffer:buf})).value;}if(!window.pdfjsLib)throw new Error('PDF reader unavailable — check your connection');const pdf=await pdfjsLib.getDocument({data:buf,isEvalSupported:false}).promise;let out='';for(let p=1;p<=pdf.numPages;p++){const tc=await (await pdf.getPage(p)).getTextContent();let lastY=null;for(const it of tc.items){const y=it.transform?it.transform[5]:null;if(lastY!==null&&y!==null&&Math.abs(y-lastY)>2)out+='\n';else if(out&&!/[\n ]$/.test(out))out+=' ';out+=it.str;lastY=y;}out+='\n';}return out;}
+function addCand(file,raw){const id='Candidate_'+String(S.nextId++).padStart(3,'0');const em=(raw.match(EMAIL_RE)||[])[0]||'',ph=(raw.match(PHONE_IN)||raw.match(PHONE_INTL)||[])[0]||'';const red=redact(raw,file);const c={id,file,red,email:em,phone:ph,ai:null,approved:false,approvedLevel:null,extraHide:[]};if(raw.trim().length<100)c.warn='Almost no text — possibly a scanned image. Paste the text instead.';S.cands.push(c);audit('Resume added',`${id} · ${(red.match(/\[[A-Z \-]+\]/g)||[]).length} items redacted`);}
+async function addFiles(files){if(DEMO)return toast('Uploads are off in this demo');let n=0;for(const f of files){const ext=f.name.split('.').pop().toLowerCase();if(!['pdf','docx','txt'].includes(ext)){toast(`Skipped ${f.name} — use PDF, Word or text`);continue;}if(S.cands.some(c=>c.file===f.name)){toast(`Already added: ${f.name}`);continue;}try{addCand(f.name,await extract(f,ext));n++;}catch(e){toast(`Could not read ${f.name}: ${e.message}`);}}renderCands();updateSession();if(n)toast(`${n} resume${n>1?'s':''} added and redacted — review them in step iii`);}
+function addPasted(){if(DEMO)return toast('Uploads are off in this demo');const t=$('#pasteText').value;if(t.trim().length<50)return toast('That text is too short to be a resume');addCand($('#pasteName').value.trim()||('Pasted resume '+S.nextId),t);$('#pasteText').value='';$('#pasteName').value='';renderCands();updateSession();toast('Added and redacted');}
+function clearCands(){if(!S.cands.length||!confirm('Remove every candidate from this session?'))return;S.cands=[];S.nextId=1;audit('All candidates removed');renderCands();updateSession();}
+function renderCands(){$('#candCount').textContent=S.cands.length?`Candidates · ${S.cands.length}`:'Candidates';if(!S.cands.length){$('#candList').innerHTML=DEMO?'<div class="empty">No resumes left. Use Reset demo to reload the samples.</div>':'<div class="empty">No resumes yet.</div>';return;}$('#candList').innerHTML=`<table><tr><th>ID</th><th>Your file (not shared)</th><th>Redacted</th><th>Review</th><th></th></tr>${S.cands.map((c,i)=>{const n=suspects(shareText(c)).length;return `<tr><td class="cid">${c.id}</td><td>${esc(c.file)}${c.warn?`<div><span class="flag amb">${esc(c.warn)}</span></div>`:''}</td><td class="hint">${(c.red.match(/\[[A-Z \-]+\]/g)||[]).length} items</td><td><span class="state ${isApproved(c)?'ok':n?'warn':'pend'}">${isApproved(c)?'Approved':n?n+' to check':'Awaiting review'}</span></td><td style="text-align:right"><button class="btn quiet" onclick="S.sel='${c.id}';tab('review')">Review</button> <button class="btn quiet" onclick="S.cands.splice(${i},1);audit('Candidate removed','${c.id}');renderCands();updateSession()">Remove</button></td></tr>`;}).join('')}</table>`;}
+const drop=$('#drop');['dragenter','dragover'].forEach(e=>drop.addEventListener(e,ev=>{ev.preventDefault();drop.classList.add('over');}));['dragleave','drop'].forEach(e=>drop.addEventListener(e,ev=>{ev.preventDefault();drop.classList.remove('over');}));drop.addEventListener('drop',ev=>addFiles([...ev.dataTransfer.files]));$('#fileIn').addEventListener('change',ev=>{addFiles([...ev.target.files]);ev.target.value='';});
+
+/* review */
+const LV_HELP={standard:'Removes names, contacts, identity numbers, date of birth, gender, marital status, religion, references and addresses. Work history is shared as written.',strict:'Everything in Standard, plus employer names, colleges and cities. Location and notice checks are done privately on this device first, so screening quality is kept.'};
+function setLevel(l){S.privacy.level=l;audit('Protection level set',l);renderReview();}
+function saveNever(){S.privacy.never=$('#neverTxt').value.split('\n').map(s=>s.trim()).filter(Boolean);audit('Never-share list updated',S.privacy.never.length+' terms');renderReview();}
+function renderReview(){$('#lvStd').classList.toggle('on',S.privacy.level==='standard');$('#lvStr').classList.toggle('on',S.privacy.level==='strict');$('#lvHelp').textContent=LV_HELP[S.privacy.level];if(document.activeElement!==$('#neverTxt'))$('#neverTxt').value=S.privacy.never.join('\n');
+ if(!S.cands.length){$('#qList').innerHTML='';$('#revPanel').innerHTML='<div class="empty">Add resumes in step ii to review them here.</div>';$('#revSummary').textContent='';return;}
+ if(!S.sel||!S.cands.find(c=>c.id===S.sel))S.sel=S.cands[0].id;
+ const ap=S.cands.filter(isApproved).length;$('#revSummary').innerHTML=`${ap} of ${S.cands.length} approved for sharing`+(ap===S.cands.length?` · All approved — <button class="btn quiet" onclick="tab('screen')">continue to screening →</button>`:'');
+ $('#qList').innerHTML=S.cands.map(c=>{const n=suspects(shareText(c)).length;return `<div class="${c.id===S.sel?'on':''}" onclick="S.sel='${c.id}';renderReview()"><span class="cid">${c.id}<button class="x" title="Remove ${c.id}" aria-label="Remove ${c.id}" onclick="event.stopPropagation();rmCand('${c.id}')">×</button></span><span class="state ${isApproved(c)?'ok':n?'warn':'pend'}">${isApproved(c)?'Approved':n?n+' to check':'Ready'}</span></div>`;}).join('');
+ const c=S.cands.find(x=>x.id===S.sel),t=shareText(c),sus=suspects(t);S._sus=sus;
+ $('#revPanel').innerHTML=`<div class="panel" style="margin:0"><div class="actions" style="margin:0 0 6px;justify-content:space-between"><h2>${c.id}</h2><span class="state ${isApproved(c)?'ok':'pend'}">${isApproved(c)?'Approved · '+S.privacy.level:'Not yet approved'}</span></div>
+ <p class="hint">This is exactly what would be shared. <mark class="rd">GOLD</mark> = removed. <mark class="sus">BURGUNDY</mark> = worth a second look.</p>
+ ${sus.length?`<span class="lab">Worth a second look</span>${sus.map((s,i)=>`<div class="sus-row"><span>${esc(s.term)}<small>${esc(s.why)}</small></span><span><button class="btn quiet" onclick="hideSus(${i})">Hide</button></span></div>`).join('')}`:'<p class="note" style="margin:12px 0">Nothing obviously personal left. Still worth a quick read.</p>'}
+ <div class="actions" style="margin-top:14px"><input id="hideIn" placeholder="Hide another word or phrase" style="max-width:320px"><button class="btn line sm" onclick="hideTerm($('#hideIn').value)">Hide</button></div>
+ ${c.extraHide.length?`<span class="lab">Hidden for this candidate</span>${c.extraHide.map((w,i)=>`<div class="sus-row"><span>${esc(w)}</span><span><button class="btn quiet" onclick="unhideTerm(${i})">Unhide</button></span></div>`).join('')}`:''}
+ <span class="lab">Redacted text</span><div class="doc">${highlight(t,sus)}</div>
+ <div class="actions">${isApproved(c)?`<button class="btn line" onclick="revoke()">Withdraw approval</button>`:`<button class="btn" onclick="approve()">Approve for sharing</button>`}<button class="btn quiet" onclick="stepRev(1)">Next candidate</button></div></div>`;}
+function hideTerm(term){term=(term||'').trim();if(term.length<2)return toast('Type the word or phrase to hide');const c=S.cands.find(x=>x.id===S.sel);if(!c.extraHide.includes(term))c.extraHide.push(term);audit('Extra term hidden',c.id);renderReview();}
+function hideSus(i){hideTerm(S._sus[i].term);}
+function unhideTerm(i){const c=S.cands.find(x=>x.id===S.sel),w=c.extraHide.splice(i,1)[0];if(!w)return;if(c.approved){c.approved=false;c.approvedLevel=null;toast('Unhidden. Approval withdrawn: please re-check and approve again.');}else toast(`"${w}" is visible again`);audit('Hidden term restored',c.id);renderReview();}
+function rmCand(id){const i=S.cands.findIndex(c=>c.id===id);if(i<0)return;S.cands.splice(i,1);if(S.sel===id)S.sel=S.cands.length?S.cands[Math.min(i,S.cands.length-1)].id:null;if(S.open===id)S.open=null;audit('Candidate removed',id);renderReview();updateSession();toast(`${id} removed`);}
+function approve(){const c=S.cands.find(x=>x.id===S.sel);c.approved=true;c.approvedLevel=S.privacy.level;audit('Approved for sharing',`${c.id} · ${S.privacy.level}`);stepRev(1);}
+function revoke(){const c=S.cands.find(x=>x.id===S.sel);c.approved=false;c.approvedLevel=null;audit('Approval withdrawn',c.id);renderReview();}
+function stepRev(d){const i=S.cands.findIndex(x=>x.id===S.sel);S.sel=S.cands[(i+d+S.cands.length)%S.cands.length].id;renderReview();}
+function approveClean(){const list=S.cands.filter(c=>!isApproved(c)&&!suspects(shareText(c)).length);if(!list.length)return toast('No unapproved candidates without items to check');if(!confirm(`Approve ${list.length} candidate(s) with nothing flagged? A quick read is still recommended.`))return;list.forEach(c=>{c.approved=true;c.approvedLevel=S.privacy.level;audit('Approved for sharing',`${c.id} · ${S.privacy.level} · bulk`);});renderReview();}
+
+/* rules engine */
+const MONS={jan:0,feb:1,mar:2,apr:3,may:4,jun:5,jul:6,aug:7,sep:8,oct:9,nov:10,dec:11};
+const DP="(?:\\b(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\\.?\\s*[,']?\\s*\\d{4}(?!\\d)|(?<!\\d)\\d{1,2}\\s*[/.-]\\s*\\d{4}(?!\\d))";
+const RANGE_RE=new RegExp('('+DP+')\\s*(?:-|–|—|to|till|until)\\s*('+DP+'|present|current|till\\s*date|to\\s*date|today|now|date)','gi');
+const EDU_RE=/bachelor|b\.?\s?tech|m\.?\s?tech|\bmca\b|\bbca\b|b\.?\s?sc|m\.?\s?sc|university|college|school|degree|diploma|cgpa|\bhsc\b|\bssc\b|intermediate|graduat/i;
+function pDate(s){s=s.toLowerCase().trim();if(/present|current|till|today|now|date/.test(s))return{i:nowIdx(),open:true};let m=s.match(/([a-z]{3})[a-z]*\.?\s*[,']?\s*(\d{4})/);if(m&&MONS[m[1]]!==undefined)return{i:+m[2]*12+MONS[m[1]]};m=s.match(/(\d{1,2})\s*[\/.-]\s*(\d{4})/);if(m)return{i:+m[2]*12+Math.min(Math.max(+m[1],1),12)-1};return null;}
+function ranges(t){const L=t.split('\n'),out=[];L.forEach((ln,i)=>{RANGE_RE.lastIndex=0;let m;while((m=RANGE_RE.exec(ln))){const a=pDate(m[1]),b=pDate(m[2]);if(!a||!b||b.i<a.i)continue;if(EDU_RE.test((L[i-1]||'')+' '+ln)&&!/engineer|analyst|tester|developer|associate|intern|consultant|\bqa\b|manager|lead/i.test(ln))continue;out.push({s:a.i,e:b.i,open:!!b.open,raw:m[0]});}});return out;}
+function union(rs){const a=rs.map(r=>[r.s,r.e]).sort((x,y)=>x[0]-y[0]),u=[];for(const [s,e] of a){if(u.length&&s<=u[u.length-1][1]+1)u[u.length-1][1]=Math.max(u[u.length-1][1],e);else u.push([s,e]);}return u;}
+function statedExp(t){const m=t.slice(0,Math.max(1500,t.length*.35)).match(/(\d{1,2}(?:\.\d{1,2})?)\s*\+?\s*(?:years|yrs|year)\b/i);if(!m)return null;const [w,d]=m[1].split('.');let v=+w;if(d)v+=(d.length===2&&+d<=11)?+d/12:+('0.'+d);return v;}
+function dupBullets(t){const c={};t.split('\n').forEach(l=>{const n=l.toLowerCase().replace(/[^a-z ]/g,' ').replace(/\s+/g,' ').trim();if(n.length>=45)c[n]=(c[n]||0)+1;});return Object.values(c).filter(v=>v>1).length;}
+function skillTokens(t){let n=0;t.split('\n').forEach(l=>{const s=(l.match(/[,|·•]/g)||[]).length;if(s>=4)n+=s+1;});return n;}
+const COPIED=/(is headquartered in|headquartered in|is one of the (?:uk'?s|us|world'?s|largest|leading|biggest)|is a leading|leading global|omnichannel retailer|operations in \d+ markets|serving millions of)/i;
+const AIBUZZ=['llm','genai','generative ai','agentic','ai agent','mcp','rag','prompt','hallucination','copilot','chatgpt','claude','gemini','nlp','machine learning','langchain'];
+const BIG=[['tata consultancy|\\btcs\\b','TCS'],['infosys','Infosys'],['wipro','Wipro'],['cognizant','Cognizant'],['accenture','Accenture'],['capgemini','Capgemini'],['tech mahindra','Tech Mahindra'],['\\bhcl','HCLTech'],['ltimindtree|lti mindtree|mindtree|l&t infotech','LTIMindtree'],['\\bibm\\b','IBM'],['virtusa','Virtusa'],['ntt data','NTT DATA'],['deloitte','Deloitte'],['genpact','Genpact'],['mphasis','Mphasis'],['hexaware','Hexaware'],['persistent systems','Persistent'],['kpmg','KPMG'],['\\bpwc\\b','PwC'],['amdocs','Amdocs'],['\\bdxc\\b','DXC'],['synechron','Synechron'],['globallogic','GlobalLogic'],['\\bepam\\b','EPAM'],['\\bcgi\\b','CGI'],['coforge','Coforge'],['altimetrik','Altimetrik'],['zensar','Zensar'],['birlasoft','Birlasoft'],['cybage','Cybage']];
+function kwPos(t,k){const pos=[];k.split('|').map(s=>s.trim()).filter(Boolean).forEach(a=>{const re=new RegExp('(?<![A-Za-z0-9])'+escRe(a)+'s?(?![A-Za-z0-9])','gi');let m;while((m=re.exec(t)))pos.push(m.index);});return pos;}
+function availability(t,rs){const np=t.match(/notice\s*period\s*[:\-–]?\s*([^\n|.;]{2,40})/i);const imm=/immediate\s*(?:joiner|joining|join)|join(?:ing)?\s*immediately|notice\s*period\s*[:\-–]?\s*immediate/i.test(t);const open=rs.filter(r=>r.open);let big=null;if(open.length){const L=t.split('\n');for(const r of open){const i=L.findIndex(l=>l.includes(r.raw));const ctx=[L[i-2],L[i-1],L[i]].filter(Boolean).join(' ');for(const [re,nm] of BIG){if(new RegExp(re,'i').test(ctx)){big=nm;break;}}if(big)break;}}
+ if(imm&&open.length)return{t:'Says immediate, yet a role shows "Present" — confirm last day',c:'amb'};
+ if(imm)return{t:'Immediate (stated)',c:'grn'};
+ if(np)return{t:'Notice stated: '+np[1].trim(),c:/immediate|\b15\b|serving/i.test(np[1])?'grn':/90|60|3\s*month|2\s*month/i.test(np[1])?'red':'amb'};
+ if(open.length&&big)return{t:`At ${big} — typically 60–90 days (verify)`,c:'red'};
+ if(open.length)return{t:'Currently employed — verify (often 30–60 days)',c:'amb'};
+ if(rs.length){const last=Math.max(...rs.map(r=>r.e)),since=nowIdx()-last;if(since>=1)return{t:`Likely immediate — last role ended ${lbl(last)}${since>6?' (ask about the gap)':''}`,c:since>6?'amb':'grn'};return{t:'Role just ended — confirm',c:'amb'};}
+ return{t:'Unknown — ask',c:'amb'};}
+function rules(c){const t=c.red,jd=S.jd,flags=[];let w=0;const rs=ranges(t),u=union(rs),yrs=u.reduce((a,[s,e])=>a+(e-s+1),0)/12,stated=statedExp(t);
+ if(!rs.length){flags.push({t:'No clear job dates',c:'amb'});w+=1;}
+ if(stated&&yrs>0&&stated-yrs>1){flags.push({t:`Claims ${fmt(stated)} yrs; dates add up to ${fmt(yrs)}`,c:'red'});w+=2;}
+ if(rs.some(r=>!r.open&&r.e>nowIdx())){flags.push({t:'End date in the future',c:'red'});w+=2;}
+ for(let k=1;k<u.length;k++){const g=u[k][0]-u[k-1][1]-1;if(g>6)flags.push({t:`${g}-month gap (ask)`,c:''});}
+ if(COPIED.test(t)){flags.push({t:'Project text reads like a company "About us"',c:'amb'});w+=1;}
+ const d=dupBullets(t);if(d>=2){flags.push({t:`${d} repeated bullets`,c:'amb'});w+=d>=4?2:1;}
+ const sk=skillTokens(t);if(sk>=40){flags.push({t:`Very long skills list (${sk})`,c:'amb'});w+=1;}
+ const jdAI=/\b(ai|ml|llm|genai|machine learning)\b/i.test(jd.text||'');const bz=AIBUZZ.filter(b=>new RegExp('(?<![a-z])'+escRe(b)+'(?![a-z])','i').test(t)).length;if(bz>=6){flags.push({t:`Heavy AI buzzwords (${bz})`,c:jdAI?'':'amb'});if(!jdAI)w+=1;}
+ const must=(jd.must||[]).map(k=>({k:k.split('|')[0].trim(),n:kwPos(t,k).length})),nice=(jd.nice||[]).map(k=>({k:k.split('|')[0].trim(),n:kwPos(t,k).length}));
+ const strong=must.filter(m=>m.n>=2),weak=must.filter(m=>m.n===1),miss=must.filter(m=>m.n===0);weak.forEach(m=>flags.push({t:`"${m.k}" mentioned once`,c:''}));
+ let score=must.length?60*(strong.length+.5*weak.length)/must.length:30;score+=nice.length?15*nice.filter(m=>m.n>0).length/nice.length:8;
+ const ey=yrs>0?yrs:(stated||0);if(jd.minExp||jd.maxExp){const lo=jd.minExp||0,hi=jd.maxExp||99;score+=(ey>=lo&&ey<=hi)?15:(ey>=lo-1&&ey<=hi+1.5)?8:0;if(hi<99&&ey>hi*1.5)flags.push({t:'Well above the range',c:'amb'});}else score+=8;
+ let locHit=null;if(jd.mode==='Remote')score+=10;else if(jd.loc.length){locHit=jd.loc.some(l=>new RegExp('(?<![a-z])'+escRe(l)+'(?![a-z])','i').test(t));score+=locHit?10:0;}else score+=5;
+ score=Math.round(score);let verdict=score>=65?'Best fit':score>=40?'Maybe':'Not a fit';if(must.length&&(strong.length+weak.length)<Math.ceil(must.length*.34))verdict='Not a fit';
+ return{score,verdict,cred:w<=1?'High':w<=3?'Medium':'Low',flags,avail:availability(t,rs),yrs,stated,locHit,strong,weak,miss,must};}
+function precheck(c){const r=rules(c);return `dates add up to ~${fmt(r.yrs)} yrs${r.stated?`; resume states ${fmt(r.stated)} yrs`:''}; location match (checked privately): ${r.locHit===null?'not checked':r.locHit?'yes':'no'}; availability (checked privately): ${r.avail.t}; flags: ${r.flags.map(f=>f.t).join('; ')||'none'}; must-have mentions: ${r.must.map(m=>m.k+' x'+m.n).join(', ')||'n/a'}`;}
+
+/* ranking & shortlist */
+function view(c){const r=rules(c),base={flags:r.flags,availC:r.avail.c};if(c.ai){const a=c.ai;return{...base,verdict:a.verdict,cred:a.credibility||r.cred,score:a.fit_score||r.score,notice:a.notice_flag||r.avail.t,location:a.location||(r.locHit===null?'—':r.locHit?'Matches':'Not found'),exp:a.relevant_exp||fmt(r.yrs)+' yrs',reason:a.reason,evidence:a.credibility_evidence,questions:a.verify_questions||[],signals:a.domain_signals||[],redflags:a.red_flags||[],src:a.source||'AI'};}
+ const lens=(S.lens&&S.lens.depth_questions)||[],first=(r.strong[0]||r.weak[0]||{k:'your core area'}).k;
+ return{...base,verdict:r.verdict,cred:r.cred,score:r.score,notice:r.avail.t,location:r.locHit===null?'—':r.locHit?'Matches':'Not found — confirm relocation',exp:fmt(r.yrs)+' yrs (from dates)',
+ reason:`Must-haves: ${r.strong.length+r.weak.length} of ${r.must.length}${r.strong.length?` — clear evidence for ${r.strong.map(m=>m.k).join(', ')}`:''}${r.weak.length?`; mentioned once: ${r.weak.map(m=>m.k).join(', ')}`:''}${r.miss.length?`; missing: ${r.miss.map(m=>m.k).join(', ')}`:''}. Dates add up to ${fmt(r.yrs)} yrs${r.stated?` (resume says ${fmt(r.stated)})`:''}.`,
+ evidence:r.flags.filter(f=>f.c).map(f=>f.t).join('; ')||'No automated warning signs.',questions:lens.length?lens.slice(0,2):[`Take me through one real problem you handled in ${first}. What caused it, and how did you prove the fix?`,'Which screens, modules or tools did you use every day on your last project, and what did a normal day look like?'],signals:[],redflags:[],src:'Rules'};}
+const VO={'Best fit':0,'Maybe':1,'Not a fit':2},CO={High:0,Medium:1,Low:2},AO={grn:0,amb:1,red:2};
+function ranked(){readJD();return S.cands.map(c=>({c,v:view(c)})).sort((a,b)=>(VO[a.v.verdict]-VO[b.v.verdict])||(CO[a.v.cred]-CO[b.v.cred])||(b.v.score-a.v.score)||((AO[a.v.availC]??1)-(AO[b.v.availC]??1))).map((x,i)=>({...x,rank:i+1}));}
+const vTag=v=>`<span class="tag ${v==='Best fit'?'best':v==='Maybe'?'maybe':'no'}"><i></i>${v}</span>`;
+const cTag=c=>`<span class="tag ${c==='High'?'best':c==='Medium'?'maybe':'no'}"><i></i>${c}</span>`;
+function renderShort(){const L=ranked(),cnt=k=>L.filter(x=>x.v.verdict===k).length,nAI=S.cands.filter(c=>c.ai).length;
+ $('#shortNote').innerHTML=!L.length?'':!S.jd.must.length?`No must-haves set, so this ranking isn't meaningful yet. <button class="btn quiet" onclick="tab('brief')">Add criteria →</button>`:!nAI?`Ranked by automatic rules against your criteria. <button class="btn quiet" onclick="tab('screen')">Add an AI check →</button>`:nAI<L.length?'AI-assessed where marked AI; automatic rules for the rest.':'';
+ $('#figs').innerHTML=[['Candidates',L.length],['Best fit',cnt('Best fit')],['Maybe',cnt('Maybe')],['Not a fit',cnt('Not a fit')],['Low credibility',L.filter(x=>x.v.cred==='Low').length],['AI assessed',S.cands.filter(c=>c.ai).length]].map(([a,b])=>`<div class="fig"><b>${b}</b><span>${a}</span></div>`).join('');
+ const rows=L.filter(x=>S.filter==='all'||x.v.verdict===S.filter);if(!rows.length){$('#shortTbl').innerHTML='<tr><td class="empty">Nothing to show yet. Add resumes in step ii.</td></tr>';return;}
+ $('#shortTbl').innerHTML='<tr><th>№</th><th>Candidate</th><th>Verdict</th><th>Credibility</th><th>Score</th><th>Availability</th><th>Assessment</th></tr>'+rows.map(({c,v,rank})=>{const op=S.open===c.id;return `<tr class="r" onclick="S.open=S.open==='${c.id}'?null:'${c.id}';renderShort()"><td><span class="rank">${rank}</span></td><td><span class="cid">${c.id}</span>${S.showIds?`<div class="hint">${esc(c.file)}<br>${esc(c.email)} ${esc(c.phone)}</div>`:''}<div><span class="tag src">${v.src}</span></div></td><td>${vTag(v.verdict)}</td><td>${cTag(v.cred)}</td><td style="font-family:var(--serif);font-size:19px">${v.score}</td><td><span class="flag ${v.availC}">${esc(v.notice)}</span></td><td>${esc(v.reason)}<div>${v.flags.map(f=>`<span class="flag ${f.c}">${esc(f.t)}</span>`).join('')}</div></td></tr>`+(op?`<tr class="detail"><td colspan="7"><div class="split"><div><span class="lab" style="margin-top:0">Credibility evidence</span><p style="margin:4px 0 12px">${esc(v.evidence)}</p>${v.signals.length?`<span class="lab">Proof of real work</span><ul>${v.signals.map(s=>`<li>${esc(s)}</li>`).join('')}</ul>`:''}${v.redflags.length?`<span class="lab">Concerns</span><ul>${v.redflags.map(s=>`<li>${esc(s)}</li>`).join('')}</ul>`:''}</div><div><span class="lab" style="margin-top:0">Ask in the interview</span><ol>${v.questions.map(q=>`<li>${esc(q)}</li>`).join('')}</ol><span class="lab">Location</span><div>${esc(v.location)}</div><span class="lab">Relevant experience</span><div>${esc(v.exp)}</div></div></div><span class="lab">Redacted resume</span><div class="doc" style="max-height:300px">${highlight(c.red,[])}</div></td></tr>`:'');}).join('');}
+
+/* AI */
+const SYS=`You are two experts at once: (1) a senior recruiter with 10+ years of hiring experience in India and globally, and (2) a hands-on practitioner of this job's domain (infer it from the JD). Judge whether the candidate fits the JD AND whether the experience looks genuinely lived, based on substance.
+- Fit: must-haves first, then experience range, location/work mode, engagement type (short contracts are a risk for currently employed full-timers), then good-to-haves.
+- Credibility (High/Medium/Low) from substance, never writing style. AI-polished wording is NOT a red flag. Genuine signals: specific modules/transactions/versions/edge cases, coherent client+project+timeline+tools, varied realistic numbers. Red flags: keyword stuffing, domain only in summary/skills, project text copied from a company "about us", identical bullets across jobs, stated years not matching dates, anachronisms, title-duty mismatch, small unknown employer + marquee client + generic duties (say "verify documents", never "fake").
+- Low credibility means "verify hard", not "reject". Never claim someone is lying.
+- Notice (India, typical, say verify): large IT/consulting firms 60-90 days; mid-size 30-60; small 15-30 or immediate. A role still "Present" but claiming immediate = confirm last working day.
+- Fairness: never use age, gender, marital status, religion, caste, nationality, disability or college prestige. Gaps: ask, don't penalize.
+- Some details are replaced with tokens like [NAME], [EMPLOYER], [CITY]. Never guess them. Location and availability were checked privately and are given in the pre-checks; rely on those.
+- Automated pre-checks come from simple rules and may be wrong; confirm or correct them.
+Respond with ONLY a JSON object:
+{"verdict":"Best fit|Maybe|Not a fit","fit_score":0-100,"credibility":"High|Medium|Low","reason":"exactly 2 short sentences: domain fit, then practical fit","credibility_evidence":"1-2 sentences citing specific evidence","notice_flag":"short","location":"short","relevant_exp":"short","domain_signals":["up to 4 specific proof points"],"red_flags":["up to 4"],"verify_questions":["2 questions built from THIS candidate's own claims that a practitioner answers easily and a pretender cannot"]}`;
+function pick(){const now=Date.now(),ps=S.providers.filter(p=>p.on&&p.key&&p.model&&/^https:\/\//.test(p.base));if(!ps.length)return{none:true};const ready=ps.find(p=>!(p.cool>now));if(ready)return{p:ready};return{wait:Math.ceil((Math.min(...ps.map(p=>p.cool))-now)/1000)};}
+function parseWait(h,txt){if(h&&!isNaN(parseFloat(h)))return parseFloat(h)+1;if(/try again in\s*[\d.]+\s*ms/i.test(txt))return 2;const m=txt.match(/try again in\s*(?:(\d+)h)?\s*(?:(\d+)m(?!s))?\s*(?:([\d.]+)s)?/i);if(m&&(m[1]||m[2]||m[3]))return(+(m[1]||0))*3600+(+(m[2]||0))*60+(+(m[3]||0))+1;return 20;}
+async function waitSec(sec,why){for(let s=Math.ceil(sec);s>0;s--){if(S.stopReq)throw new Error('Stopped');$('#wait').textContent=`${why} — resuming in ${s}s`;await new Promise(r=>setTimeout(r,1000));}$('#wait').textContent='';}
+async function llm(messages,maxTokens=800){for(let g=0;g<80;g++){if(S.stopReq)throw new Error('Stopped');const pk=pick();if(pk.none)throw new Error('Connect an AI provider with its address, key and model in AI access.');if(pk.wait){await waitSec(pk.wait+1,'Every connected provider has reached its usage limit');continue;}const p=pk.p,N=p.name||'Provider',oss=/gpt-oss|gemini-(?:2\.5|3)|qwen3/i.test(p.model),body={model:p.model,messages,temperature:.2,max_tokens:oss?Math.max(maxTokens,2000):maxTokens};if(oss&&p.effort!==false)body.reasoning_effort='low';if(p.json!==false)body.response_format={type:'json_object'};let res;
+ try{res=await fetch(p.base.replace(/\/+$/,'')+'/chat/completions',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+p.key},body:JSON.stringify(body),referrerPolicy:'no-referrer',credentials:'omit'});}
+ catch(e){p.cool=Date.now()+60000;log(`${N}: could not connect (${e.message})`);if(S.providers.filter(q=>q.on&&q.key).length<=1)throw new Error(`Could not reach ${N}. Check your internet connection and the provider address.`);continue;}
+ if(res.ok){const d=await res.json(),t=d&&d.choices&&d.choices[0]&&d.choices[0].message&&d.choices[0].message.content;if(!t)throw new Error('Empty reply from '+N);return t;}
+ const txt=await res.text();
+ if(res.status===429){const w=parseWait(res.headers.get('retry-after'),txt);p.cool=Date.now()+w*1000;log(`${N}: usage limit reached — pausing ${Math.round(w)}s`);continue;}
+ if(res.status===404||/model_not_found|model_decommissioned|does not exist/i.test(txt))throw new Error(`${N} no longer offers the model "${p.model}". Open AI access, press Test key and choose another model.`);
+ if(res.status===400&&body.reasoning_effort&&/reasoning/i.test(txt)){p.effort=false;continue;}
+ if(res.status===400&&body.response_format&&/response_format|json/i.test(txt)){p.json=false;continue;}
+ if(res.status===401||res.status===403){p.on=false;p.status='Key rejected — please check it';log(`${N}: key rejected, switched off`);continue;}
+ if(res.status===413||/context length|too large|maximum context/i.test(txt))throw new Error('Too long for this model — choose one with a larger context.');
+ if(res.status>=500){p.cool=Date.now()+15000;log(`${N}: server error ${res.status}, retrying`);continue;}
+ throw new Error(`${N} returned ${res.status}: ${txt.slice(0,160)}`);}throw new Error('Too many retries');}
+function parseJSON(t){t=String(t).replace(/```json|```/g,'');const a=t.indexOf('{'),b=t.lastIndexOf('}');if(a<0||b<a)throw new Error('The AI reply was not in the expected format');return JSON.parse(t.slice(a,b+1));}
+function normAI(j,src){const v=String(j.verdict||'').toLowerCase(),cr=String(j.credibility||'').toLowerCase(),arr=x=>Array.isArray(x)?x.map(String).filter(Boolean):(x?String(x).split(/\s*\|\s*/).filter(Boolean):[]);return{verdict:v.startsWith('best')?'Best fit':v.startsWith('may')?'Maybe':'Not a fit',credibility:cr.startsWith('h')?'High':cr.startsWith('l')?'Low':'Medium',fit_score:Math.max(0,Math.min(100,parseInt(j.fit_score)||0)),reason:String(j.reason||''),credibility_evidence:String(j.credibility_evidence||''),notice_flag:String(j.notice_flag||''),location:String(j.location||''),relevant_exp:String(j.relevant_exp||''),domain_signals:arr(j.domain_signals).slice(0,4),red_flags:arr(j.red_flags).slice(0,4),verify_questions:arr(j.verify_questions).slice(0,3),source:src||'AI'};}
+function msgs(c){return[{role:'system',content:SYS},{role:'user',content:`TODAY: ${lbl(nowIdx())}\n${jdBlock()}\n\nPRE-CHECKS for ${c.id}: ${precheck(c)}\n\nRESUME (${c.id}):\n<<<\n${shareText(c).slice(0,7000)}\n>>>`}];}
+function needKey(msg,back){if(!pick().none)return false;tab('keys');S.keyNote={msg,back};renderProviders();return true;}
+function backFromKeys(){const b=(S.keyNote&&S.keyNote.back)||'brief';S.keyNote=null;tab(b);}
+function runAI(all){if(S.running)return;readJD();if(!S.cands.length)return toast('Add resumes first (step ii)');if(!S.jd.text&&!S.jd.must.length)return toast('Add the brief first (step i)');const appr=S.cands.filter(isApproved);if(!appr.length)return toast('Approve candidates in the privacy review (step iii) first');const todo=appr.filter(c=>all||!c.ai);if(!todo.length)return toast('Every approved candidate is already assessed');if(DEMO)return doRun(todo);if(needKey('Connect a key to use this.','screen'))return;requireAttest(()=>doRun(todo));}
+async function doRun(todo){S.running=true;S.stopReq=false;$('#runBtn').disabled=true;$('#log').textContent=DEMO?'Demo: replaying pre-recorded AI results…':'Starting…';let done=0;
+ for(const c of todo){if(S.stopReq)break;$('#progTxt').textContent=`Assessing ${c.id} — ${done+1} of ${todo.length}`;
+  if(DEMO){await new Promise(r=>setTimeout(r,700));const a=DEMO_AI[c.file];if(a){c.ai=normAI(a,'AI · sample');audit('Assessed (pre-recorded demo)',c.id);log(`${c.id}: ${c.ai.verdict} · credibility ${c.ai.credibility}`);}else log(`${c.id}: no pre-recorded result in the demo`);}
+  else{try{const m=msgs(c),p=pick().p;c.ai=normAI(parseJSON(await llm(m)));audit('Shared with AI',`${c.id} · ${p?(p.name||'provider'):'provider'} · ${S.privacy.level}`);log(`${c.id}: ${c.ai.verdict} · credibility ${c.ai.credibility}`);}catch(e){if(e.message==='Stopped')break;log(`${c.id}: ${e.message}`);if(/Could not reach|Connect an AI provider|no longer offers/.test(e.message)){toast(e.message);break;}}}
+  done++;$('#prog').style.width=(100*done/todo.length)+'%';}
+ S.running=false;$('#runBtn').disabled=false;$('#wait').textContent='';$('#progTxt').innerHTML=S.stopReq?`Stopped after ${done} of ${todo.length}.`:`Finished ${done} of ${todo.length}. <button class="btn line sm" style="margin-left:10px" onclick="tab('short')">See the shortlist →</button>`;renderProviders();}
+function requireAttest(cb){if(S.privacy.attested)return cb();S._after=cb;$$('.att').forEach(x=>x.checked=false);$('#attest').classList.add('show');}
+function confirmAttest(){if(!$$('.att').every(x=>x.checked))return toast('Please confirm all three points');S.privacy.attested=true;audit('Use confirmed','Notice or lawful basis · approved service · human decision');$('#attest').classList.remove('show');const f=S._after;S._after=null;f&&f();}
+
+/* providers */
+function updateAI(){if(DEMO){$('#aiStat').textContent='AI: pre-recorded (demo)';return;}const p=S.providers.find(p=>p.on&&p.key&&p.model&&/^https:\/\//.test(p.base));$('#aiStat').textContent=p?`AI: ${p.name||'provider'} connected`:'AI: not connected';}
+function renderProviders(){const kn=$('#keyNote');if(S.keyNote){kn.classList.remove('hidden');kn.innerHTML=`${esc(S.keyNote.msg)} <b style="font-style:normal">You don't need a key to carry on.</b> ${S.keyNote.back==='screen'?'The rules have already assessed every candidate, and the chat hand-off works without a key.':'You can fill in the criteria yourself and continue to the next step.'} <button class="btn quiet" onclick="backFromKeys()">Back to ${S.keyNote.back==='screen'?'screening':'the brief'}</button>`;}else kn.classList.add('hidden');
+ const names=Object.entries(PRESETS).filter(([k])=>k!=='custom').map(([,P])=>`<option value="${esc(P.name)}">`).join('');
+ $('#provList').innerHTML=`<datalist id="provNames">${names}</datalist>`+(S.providers.map((p,i)=>{const P=PRESETS[p.kind]||{};return `<div class="prov"><div class="prov-h"><b id="ph${i}">${esc(p.name||'New provider')}</b><span class="actions" style="margin:0"><label class="check" style="margin:0"><input type="checkbox" ${p.on?'checked':''} onchange="S.providers[${i}].on=this.checked;updateAI()"> In use</label><button class="btn quiet" onclick="movP(${i},-1)">Up</button><button class="btn quiet" onclick="movP(${i},1)">Down</button><button class="btn quiet" onclick="S.providers.splice(${i},1);renderProviders()">Remove</button></span></div>
+ <div class="cols"><div><label class="lab">Name</label><input id="pn${i}" list="provNames" autocomplete="off" value="${esc(p.name)}" placeholder="e.g. Gemini, Groq, Mistral" oninput="onName(${i},this.value)"></div><div><label class="lab">Address (https)</label><input id="pb${i}" value="${esc(p.base)}" placeholder="Fills in by itself" oninput="S.providers[${i}].base=this.value.trim();updateAI()"></div><div><label class="lab">Model</label><input id="pm${i}" list="ml${i}" value="${esc(p.model)}" placeholder="Test the key to list models" oninput="S.providers[${i}].model=this.value.trim();updateAI()"><datalist id="ml${i}">${(p.models||[]).map(m=>`<option value="${esc(m)}">`).join('')}</datalist></div></div>
+ <label class="lab">API key</label><input id="pk${i}" type="password" autocomplete="off" value="${esc(p.key)}" placeholder="Paste your key" oninput="onKey(${i},this.value)">
+ <div class="actions"><button class="btn line sm" onclick="testP(${i})">Test key</button>${P.getKey?`<a class="link" style="margin:0" href="${esc(P.getKey)}" target="_blank" rel="noopener noreferrer">Get a ${esc(P.name)} key</a>`:''}<span class="hint" id="pst${i}">${esc(p.status||'')}</span></div></div>`;}).join('')||'<div class="empty">No provider connected yet. Choose one below and paste your key. The address fills in by itself.</div>');updateAI();}
+function autoBase(p){const b=(p.base||'').replace(/\/+$/,'');return !b||b==='https:'||b==='https://'||PBASES.includes(b);}
+function applyPreset(i,k,why,focusId){const p=S.providers[i],P=PRESETS[k];if(!P||p.kind===k||!autoBase(p))return;p.kind=k;p.base=P.base;if(!p.model||PMODELS.includes(p.model))p.model=P.model||'';p.models=[];p.json=undefined;p.status=`${why} ${P.name}. Address filled in${P.model?'.':' — now press Test key to choose a model.'}`;renderProviders();const el=$('#'+focusId);if(el){el.focus();const n=el.value.length;try{el.setSelectionRange(n,n);}catch(_){}}}
+function onName(i,v){const p=S.providers[i];p.name=v;$('#ph'+i).textContent=v||'New provider';updateAI();const hit=NAME_SIGS.find(([re])=>re.test(v));if(!hit)return;const kk=KEY_SIGS.find(([re])=>re.test(p.key||''));if(kk&&kk[1]!==hit[1])return;applyPreset(i,hit[1],'Recognised',`pn${i}`);}
+function onKey(i,v){const p=S.providers[i];p.key=v.trim();updateAI();const hit=KEY_SIGS.find(([re])=>re.test(p.key));if(!hit||p.kind===hit[1]||!autoBase(p))return;const P=PRESETS[hit[1]];if(!p.name||Object.values(PRESETS).some(x=>x.name&&x.name===p.name)||NAME_SIGS.some(([re])=>re.test(p.name)))p.name=P.name;applyPreset(i,hit[1],'Key recognised as',`pk${i}`);}
+function movP(i,d){const j=i+d;if(j<0||j>=S.providers.length)return;[S.providers[i],S.providers[j]]=[S.providers[j],S.providers[i]];renderProviders();}
+function addP(){if(DEMO)return toast('Keys are off in this demo');const k=$('#preset').value,P=PRESETS[k];S.providers.push({name:P.name,base:P.base,model:P.model,kind:k==='custom'?null:k,key:'',on:true,cool:0});renderProviders();const i=S.providers.length-1,el=$(k==='custom'?'#pn'+i:'#pk'+i);if(el)el.focus();}
+function forgetKeys(){S.providers.forEach(p=>{p.key='';p.status='';});audit('All keys forgotten');renderProviders();toast('Keys removed from memory');}
+const SKIP_MODELS=/embed|tts|audio|image|imagen|veo|whisper|guard|moderation|aqa|live|transcri|vision|search|realtime/i;
+async function testP(i){const p=S.providers[i],st=$('#pst'+i);if(!/^https:\/\//.test(p.base)){st.textContent='The address must start with https:// — or type the provider\'s name above to fill it in.';return;}if(!p.key){st.textContent='Paste your key first.';return;}st.textContent='Testing…';try{const r=await fetch(p.base.replace(/\/+$/,'')+'/models',{headers:{Authorization:'Bearer '+p.key},referrerPolicy:'no-referrer',credentials:'omit'});if(!r.ok){st.textContent=`Not accepted (${r.status}). ${(await r.text()).slice(0,100)}`;return;}const d=await r.json();p.models=(d.data||[]).map(m=>String(m.id).replace(/^models\//,'')).sort();
+ if(p.model&&p.models.length&&!p.models.includes(p.model))p.model='';
+ if(!p.model){const ok=p.models.filter(m=>!SKIP_MODELS.test(m));for(const re of ((PRESETS[p.kind]||{}).prefer||[])){const f=ok.find(m=>re.test(m));if(f){p.model=f;break;}}}
+ p.status=p.model?`Connected — using ${p.model}. You can change it under Model.`:`Connected — ${p.models.length} models available. Choose one under Model.`;p.on=true;renderProviders();}catch(e){st.textContent=`Could not connect (${e.message}). Check your internet connection and the key. If they're fine, this provider may not allow use from a browser. Try another provider or the chat hand-off.`;}}
+
+/* chat hand-off */
+const CHAT_INSTR=`You are two experts at once: a senior recruiter (10+ years, India and global hiring) and a hands-on practitioner of this job's domain. Assess EVERY candidate below against the job.
+For each: Verdict (Best fit / Maybe / Not a fit); Credibility (High / Medium / Low) judged on substance, not writing style (AI-polished wording is fine; red flags are keyword stuffing, domain only in the summary, copied company descriptions, repeated template bullets, stated years not matching dates, anachronisms, small unknown employer + marquee client + generic duties = "verify documents"); Score 0-100; Notice flag (India norms: large IT firms 60-90 days, mid-size 30-60, small 15-30; "Present" + "immediate" = confirm last day); Location; Relevant experience; a 2-sentence Reason; 1-2 sentences of Credibility evidence; and 2 Verify questions built from that candidate's own claims.
+Fairness: never use age, gender, marital status, religion, caste, nationality or college prestige. Low credibility means verify, not reject. Tokens like [NAME] or [EMPLOYER] replace hidden details; never guess them. The pre-checks were made privately and may be imperfect.
+OUTPUT: a short summary, then ONE CSV block with exactly this header:
+Candidate_ID,Rank,Verdict,Credibility,Score,Notice_Flag,Location,Relevant_Exp,Reason,Credibility_Evidence,Verify_Questions
+Quote every field; separate the two verify questions with " | ". Copy Candidate_ID exactly.`;
+function renderScreen(){const ap=S.cands.filter(isApproved).length,tot=S.cands.length;$('#scrSummary').textContent=tot?`${ap} of ${tot} candidates approved for sharing. Rules have already assessed all ${tot}.`:'Add resumes and approve them in the privacy review first.';$('#aiNote').innerHTML=DEMO?'Demo: AI results are pre-recorded for the five sample resumes. No key needed.':pick().none?`No AI key connected yet. <button class="btn quiet" onclick="tab('keys')">Connect a key</button> The rules above and the chat hand-off below work without one.`:'';renderBatches();}
+function renderBatches(){const n=Math.max(1,parseInt($('#batchN').value)||8),A=S.cands.filter(isApproved);if(!A.length){$('#batchBtns').innerHTML='<span class="hint">Approve candidates in step iii to enable this.</span>';return;}let h='';for(let s=0,b=1;s<A.length;s+=n,b++){const e=Math.min(A.length,s+n);h+=`<button class="btn line sm" onclick="copyPack(${s},${e})">Copy batch ${b} · ${A[s].id}–${A[e-1].id}</button>`;}h+=`<button class="btn quiet" onclick="dlPack()">Download all as text</button>`;$('#batchBtns').innerHTML=h;}
+$('#batchN').addEventListener('input',renderBatches);
+function pack(s,e){const A=S.cands.filter(isApproved).slice(s,e);return{ids:A.map(c=>c.id),text:`${CHAT_INSTR}\n\n=== JOB ===\n${jdBlock()}\n\n=== CANDIDATES ===`+A.map(c=>`\n\n===== ${c.id} =====\nPRE-CHECKS: ${precheck(c)}\n${shareText(c)}`).join('')};}
+function copyPack(s,e){requireAttest(()=>{const p=pack(s,e);copyText(p.text,`Copied ${p.ids.length} redacted resumes — paste into your AI chat`);audit('Copied for chat',p.ids.join(', '));});}
+function dlPack(){requireAttest(()=>{const p=pack(0,9999);download('hireproof_brief.txt',p.text,'text/plain');audit('Downloaded chat brief',p.ids.length+' candidates');});}
+function parseCSV(t){const rows=[];let r=[],f='',q=false;for(let i=0;i<t.length;i++){const ch=t[i];if(q){if(ch==='"'){if(t[i+1]==='"'){f+='"';i++;}else q=false;}else f+=ch;}else if(ch==='"')q=true;else if(ch===','){r.push(f);f='';}else if(ch==='\n'){r.push(f);rows.push(r);r=[];f='';}else if(ch!=='\r')f+=ch;}if(f||r.length){r.push(f);rows.push(r);}return rows;}
+function importCSV(){const t=$('#importTxt').value.replace(/^\ufeff/,'').replace(/```[a-z]*/gi,''),i=t.indexOf('Candidate_ID');if(i<0)return toast('Could not find the "Candidate_ID" header');const rows=parseCSV(t.slice(i).trim()),H=rows.shift().map(h=>h.trim());let n=0;rows.forEach(r=>{const o={};H.forEach((h,k)=>o[h]=(r[k]||'').trim());const c=S.cands.find(x=>x.id===o.Candidate_ID);if(!c)return;c.ai=normAI({verdict:o.Verdict,credibility:o.Credibility,fit_score:o.Score,reason:o.Reason,credibility_evidence:o.Credibility_Evidence,notice_flag:o.Notice_Flag,location:o.Location,relevant_exp:o.Relevant_Exp,verify_questions:o.Verify_Questions},'Chat');n++;});audit('Chat results imported',n+' candidates');toast(`Imported ${n} result${n===1?'':'s'}`);if(n)tab('short');}
+
+/* export */
+function download(name,text,type){const b=new Blob(['\ufeff'+text],{type:type+';charset=utf-8'}),a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},500);}
+const cell=v=>'"'+String(v??'').replace(/"/g,'""').replace(/^([=+\-@])/,"'$1")+'"';
+const stamp=()=>new Date().toISOString().slice(0,10);
+function exportCSV(withIds){const L=ranked();if(!L.length)return toast('Nothing to export yet');if(withIds&&!confirm('This file will contain names and contact details.\n\nStore it only where your organisation allows, and delete it when hiring closes. Continue?'))return;
+ const H=['Candidate_ID','Rank',...(withIds?['Original_File','Email','Phone']:[]),'Verdict','Credibility','Score','Notice_Flag','Location','Relevant_Exp','Reason','Credibility_Evidence','Verify_Questions','Auto_Flags','Source'];
+ const rows=L.map(({c,v,rank})=>[c.id,rank,...(withIds?[c.file,c.email,c.phone]:[]),v.verdict,v.cred,v.score,v.notice,v.location,v.exp,v.reason,v.evidence,v.questions.join(' | '),v.flags.map(f=>f.t).join('; '),v.src].map(cell).join(','));
+ download(withIds?`CONFIDENTIAL_shortlist_${stamp()}.csv`:`results_${stamp()}.csv`,H.join(',')+'\n'+rows.join('\n'),'text/csv');audit('Exported',withIds?'shortlist with contacts':'anonymous results');}
+
+/* governance */
+function noticeText(){const role=$('#jdTitle').value.trim()||'[role]';return `Privacy notice for applicants — [Company name]
+
+We use the information in your resume only to assess your suitability for the role of ${role}.
+
+Before any automated tool reviews it, your name, contact details, identity numbers, date of birth, gender, marital status and address are removed on our own device. An AI service may help our recruiters review the remaining work history. It does not make hiring decisions; our team does.
+
+We keep your information only for this hiring process and for [retention period], after which it is deleted.
+
+You may ask what information we hold about you, ask us to correct or delete it, or withdraw your consent, by writing to [privacy contact email].
+
+[Company name] · [Grievance officer / contact details]`;}
+function renderGov(){$('#noticeTxt').value=noticeText();$('#idleSel').value=String(S.privacy.idleMin);renderAudit();}
+function renderAudit(){$('#auditTbl').innerHTML=S.audit.length?`<table><tr><th>Time</th><th>Action</th><th>Detail</th></tr>${S.audit.slice().reverse().map(a=>`<tr><td class="hint" style="white-space:nowrap">${a.t.toLocaleTimeString()}</td><td>${esc(a.ev)}</td><td class="hint">${esc(a.detail)}</td></tr>`).join('')}</table>`:'<div class="empty">No actions yet.</div>';}
+function exportAudit(){if(!S.audit.length)return toast('Nothing recorded yet');download(`hireproof_session_record_${stamp()}.csv`,'Time,Action,Detail\n'+S.audit.map(a=>[a.t.toISOString(),a.ev,a.detail].map(cell).join(',')).join('\n'),'text/csv');}
+
+/* session safety */
+let lastAct=Date.now();['click','keydown','mousemove','scroll','touchstart'].forEach(e=>addEventListener(e,()=>{lastAct=Date.now();},{passive:true}));
+const hasData=()=>S.cands.length>0||S.providers.some(p=>p.key);
+function wipe(ask,reason){if(ask&&!confirm(DEMO?'Reset the demo to its starting point?':'Erase everything in this session: resumes, results, keys and the session record?'))return;S.cands=[];S.nextId=1;S.providers.forEach(p=>{p.key='';p.status='';p.cool=0;});S.privacy.attested=false;S.privacy.never=[];S.audit=[];S.lens=null;S.open=null;S.sel=null;['#jdTitle','#jdText','#jdMust','#jdNice','#jdMin','#jdMax','#jdLoc','#jdType','#importTxt','#neverTxt'].forEach(s=>$(s).value='');$('#jdImm').checked=false;renderLens();updateSession();tab('brief');if(DEMO)loadDemo(true);toast(reason||(DEMO?'Demo reset':'Session erased'));}
+function resetDemo(){S.privacy.level='standard';S.filter='all';$('#fltr').value='all';$('#prog').style.width='0';$('#progTxt').textContent='Not started.';$('#log').textContent='Ready.';wipe(false,'Demo reset');}
+function updateSession(){updateAI();const n=S.cands.length;if(!hasData()){$('#sessInfo').textContent='Empty session';return;}let s=`<b>${n}</b> candidate${n===1?'':'s'} in memory`;if(S.privacy.idleMin>0){const left=Math.max(0,S.privacy.idleMin*60-Math.floor((Date.now()-lastAct)/1000));s+=` · erases after ${S.privacy.idleMin} min idle${left<120?` (${left}s left)`:''}`;}$('#sessInfo').innerHTML=s;}
+setInterval(()=>{updateSession();if(S.privacy.idleMin>0&&hasData()&&!S.running&&Date.now()-lastAct>S.privacy.idleMin*60000)wipe(false,'Session erased after inactivity');},5000);
+addEventListener('beforeunload',e=>{if(!DEMO&&hasData()){e.preventDefault();e.returnValue='';}});
+
+/* sample data (fictional people) */
+const DEMO_JD={title:'Java Backend Developer — Full-time',text:`Java Backend Developer to build and run order and inventory microservices for a logistics platform. Location: Bengaluru, hybrid (3 days in office). Experience: 3–6 years. Must have hands-on Java with Spring Boot, microservices, REST APIs and SQL databases. Good to have: Kafka, Docker or Kubernetes, AWS, Redis and CI/CD. Notice period of up to 30 days preferred.`,must:'Java, Spring Boot|Spring, Microservices, REST|RESTful, SQL|PostgreSQL|MySQL',nice:'Kafka, Docker|Kubernetes|K8s, AWS|Azure|GCP, Redis, CI/CD|Jenkins|GitHub Actions',min:3,max:6,loc:'Bangalore|Bengaluru',mode:'Hybrid',imm:false,type:'Full-time'};
+const DEMO_RES=[
+['Aditya_Rao_Resume.pdf',`Aditya Rao
+Backend Engineer | Bengaluru | aditya.rao@example.com | +91 98450 12345
+PROFESSIONAL SUMMARY
+Java backend engineer with 4.5 years on microservices, Kafka pipelines and PostgreSQL-backed REST APIs.
+EXPERIENCE
+Software Engineer II | Cartwheel Logistics, Bengaluru | Jan 2024 - Present
+- Split a monolithic order service into four Spring Boot microservices; cut p95 order-lookup latency from 900 ms to 180 ms with Redis caching and a composite PostgreSQL index.
+- Made payment callbacks idempotent with an idempotency-key table after duplicate Kafka deliveries caused double shipments.
+- Traced a production memory leak to an unbounded in-memory cache using heap dumps; fixed it with size-based eviction.
+- Reduced Kafka consumer lag during sale peaks by raising partitions from 6 to 24 and tuning max.poll.records.
+Software Engineer | Infosys, Bengaluru | Mar 2022 - Dec 2023
+Client: UK retail chain - returns platform
+- Built REST APIs in Spring Boot for the returns workflow; wrote JUnit 5 and Testcontainers integration tests.
+- Moved the build from Jenkins freestyle jobs to declarative pipelines producing Docker images.
+Notice period: 30 days
+EDUCATION
+B.Tech Computer Science, 2021`],
+['Nikhil_P_CV.docx',`Nikhil P
+Senior Java Full Stack Developer | 7+ Years | nikhil.p91@example.com | 9123456780 | Pune
+SUMMARY
+Results-driven developer with 7+ years in Java, Spring, Microservices, React, Angular, Node.js, Python, AI, LLM, GenAI, RAG, MCP, Agentic AI, Blockchain and DevOps.
+SKILLS
+Java, Spring Boot, Spring Cloud, Hibernate, Microservices, REST APIs, GraphQL, React, Angular, Vue, Node.js, Express, Python, Django, Go, Kotlin, C#, .NET, MySQL, PostgreSQL, MongoDB, Cassandra, Redis, Kafka, RabbitMQ, Elasticsearch, Docker, Kubernetes, Terraform, Ansible, Jenkins, GitHub Actions, AWS, Azure, GCP, Snowflake, Spark, Hadoop, Power BI, Salesforce, SAP, GitHub Copilot, ChatGPT, Claude, Gemini, LangChain
+EXPERIENCE
+Software Developer | Brightpath Softech | Jan 2023 - Present
+- Developed and maintained web applications using the latest technologies.
+- Worked with cross-functional teams to deliver high-quality software on time.
+- Participated in Agile ceremonies including sprint planning and retrospectives.
+Software Developer | Nexa Webworks | Jun 2022 - Dec 2022
+- Developed and maintained web applications using the latest technologies.
+- Worked with cross-functional teams to deliver high-quality software on time.
+- Participated in Agile ceremonies including sprint planning and retrospectives.
+EDUCATION
+B.Sc Computer Science, 2022`],
+['Rahul_Menon_Resume.pdf',`Rahul Menon
+Java Developer | Chennai | rahul.menon@example.com | +91 90030 11122
+Java Developer with 6 years of experience in enterprise application development.
+EXPERIENCE
+Java Developer | Zyntra IT Services Pvt Ltd (Client: Globex Retail Group) | Apr 2022 - Present
+Project: E-commerce Platform Modernisation
+Globex Retail Group is a leading global omnichannel retailer, headquartered in London, serving millions of customers across 30 markets.
+- Developed code as per the requirements given by the client.
+- Worked on Java, Spring Boot and microservices for all modules.
+- Fixed bugs raised by the testing team and supported deployments.
+- Attended daily stand-ups and followed up with the team for closure.
+Project: Order Management Upgrade | Apr 2022 - Mar 2024
+Globex Retail Group is a leading global omnichannel retailer, headquartered in London, serving millions of customers across 30 markets.
+- Developed code as per the requirements given by the client.
+- Fixed bugs raised by the testing team and supported deployments.
+- Attended daily stand-ups and followed up with the team for closure.
+Immediate joiner
+EDUCATION
+B.Sc Computer Science, Madras University, 2021`],
+['Divya_Krishnan_CV.docx',`Divya Krishnan
+Java Developer – Microservices | divya.k@example.com | +91 94440 55667 | Hyderabad
+Summary: 3.9 years building Java services for a telecom billing platform.
+Tata Consultancy Services | Systems Engineer | Nov 2022 - Present
+Client: European telecom operator – billing and rating platform
+- Built rating microservices in Spring Boot that price usage records from Kafka; handled out-of-order events with event-time windows.
+- Added Resilience4j circuit breakers and retries with backoff around the tax-calculation service after cascading timeouts.
+- Exposed REST endpoints for bill previews and tuned slow PostgreSQL queries with EXPLAIN ANALYZE; the nightly bill run dropped from 5 hours to 2.
+- Wrote Flyway migrations, containerised services with Docker and deployed to Kubernetes with Helm; reported to Mr. Suresh Nair (Delivery Manager).
+EDUCATION
+B.Tech IT, 2022`],
+['Karthik_Reddy_Resume.pdf',`Karthik Reddy
+SDET | Bengaluru (Whitefield) | karthik.r@example.com | 99001 23456
+Test automation engineer with 3.5 years building Java-based test frameworks.
+Experience
+SDET | Quantro Labs | Aug 2023 - Jun 2026
+- Built a Selenium WebDriver and TestNG framework in Java using the Page Object Model; cut the regression run from 6 hours to 90 minutes with parallel runs on Selenium Grid.
+- Automated REST API tests for 14 microservices with REST Assured and validated them against OpenAPI contracts.
+- Wrote SQL checks in MySQL to verify order data after each test run.
+QA Engineer | ShopNest | Mar 2023 - Jul 2023
+- Automated cart and checkout tests with Java and Selenium; logged defects in Jira.
+Education: B.E., 2022
+Gender: Male | DOB: 12-05-1999`]];
+
+/* demo only: pre-recorded expert lens and AI results for the five fictional resumes */
+const DEMO_LENS={domain:'Java backend development',
+ proof_signals:['Idempotent APIs and duplicate-message handling','Kafka partitions, offsets and consumer lag','Circuit breakers, retries and timeouts','Heap dumps, GC and memory-leak fixes','Query tuning with indexes and EXPLAIN','Schema migrations with Flyway or Liquibase','Caching strategy and invalidation','Integration tests with Testcontainers'],
+ adjacent_domains:['Java test automation (Selenium, TestNG, REST Assured)','Android app development in Java','Support or maintenance roles with no design work'],
+ depth_questions:['How did you make an API safe to retry, and where did you store the idempotency key?','Consumer lag spikes during a sale. What do you check first?','Walk me through the last production memory issue you fixed.','How do you roll out a database schema change without downtime?']};
+const DEMO_AI={
+ 'Aditya_Rao_Resume.pdf':{verdict:'Best fit',fit_score:90,credibility:'High',
+  reason:"Hands-on Spring Boot microservices work with Kafka, PostgreSQL and Redis, described at production depth. Based in Bengaluru with a 30-day notice, which fits the hiring timeline.",
+  credibility_evidence:"Specific failure stories with numbers, such as duplicate Kafka deliveries fixed with an idempotency table and a cache leak traced through heap dumps, are hard to invent. The stated 4.5 years matches the job dates.",
+  notice_flag:'30 days — fits the brief',location:'Bengaluru — matches',relevant_exp:'~4.6 yrs backend development',
+  domain_signals:['Idempotent payment callbacks after duplicate Kafka deliveries','Consumer lag fixed by repartitioning (6 → 24)','Memory leak traced with heap dumps','p95 latency 900 ms → 180 ms with Redis and an index'],
+  red_flags:[],
+  verify_questions:['You made payment callbacks idempotent. Where was the key stored, and what happened on a retry in the middle of a transaction?','How did you decide to go from 6 to 24 partitions, and what changed for the consumers?']},
+ 'Nikhil_P_CV.docx':{verdict:'Not a fit',fit_score:20,credibility:'Low',
+  reason:"Java, Spring Boot and microservices appear only in the summary and skills list; both jobs describe generic web work with no technical detail. Based in Pune and currently employed.",
+  credibility_evidence:"Claims 7+ years, but the job dates add up to about 4.3. The same three bullets appear word for word in both jobs, and the skills list runs to 45+ unrelated tools.",
+  notice_flag:'Currently employed — confirm notice',location:'Pune — relocation needed',relevant_exp:'No backend work evidenced',
+  domain_signals:[],
+  red_flags:['Stated 7+ yrs vs ~4.3 yrs from dates','Identical bullets in both jobs','Backend skills named only in summary and skills','Heavy AI buzzwords for a non-AI role'],
+  verify_questions:['Pick one Spring Boot service you built. What did it do, and how did it talk to the database?','Which of the tools in your skills list did you use last week, and for what?']},
+ 'Rahul_Menon_Resume.pdf':{verdict:'Maybe',fit_score:46,credibility:'Low',
+  reason:"Names Java, Spring Boot and microservices but gives no design or production detail. Says immediate joiner while the current role shows Present, and is based in Chennai.",
+  credibility_evidence:"Both projects repeat the client's 'About us' description, and the bullets are copied between them. The stated 6 years compares with about 4.5 from the dates.",
+  notice_flag:'Says immediate, but role is Present — confirm last working day',location:'Chennai — relocation needed',relevant_exp:'~4.5 yrs, depth unclear',
+  domain_signals:['Mentions Java, Spring Boot and microservices'],
+  red_flags:["Client 'About us' text copied into projects",'Repeated bullets across projects','Stated 6 yrs vs ~4.5 yrs from dates','Immediate joiner while still employed'],
+  verify_questions:['On the order management upgrade, which service did you own, and what did its main API do?','You can join immediately, but your role shows Present. What is your last working day?']},
+ 'Divya_Krishnan_CV.docx':{verdict:'Best fit',fit_score:82,credibility:'High',
+  reason:"Strong Spring Boot microservices experience with Kafka, resilience patterns and PostgreSQL tuning, described in concrete detail. The risks are practical: based in Hyderabad at a large IT firm, so relocation and a 60–90 day notice need checking.",
+  credibility_evidence:"Out-of-order event handling, circuit breakers added after cascading timeouts and a bill run cut from 5 hours to 2 are details a practitioner would give. The stated 3.9 years matches the dates.",
+  notice_flag:'At a large IT firm — typically 60–90 days (verify)',location:'Hyderabad — relocation needed',relevant_exp:'~3.9 yrs backend development',
+  domain_signals:['Out-of-order Kafka events with event-time windows','Resilience4j circuit breakers and retries','EXPLAIN ANALYZE tuning; bill run 5 h → 2 h','Flyway, Docker, Kubernetes and Helm'],
+  red_flags:['Likely long notice; relocation needed'],
+  verify_questions:['How did you handle usage records arriving out of order, and what happened to very late events?','After adding circuit breakers to the tax service, what did the fallback return, and how did billing handle it?']},
+ 'Karthik_Reddy_Resume.pdf':{verdict:'Not a fit',fit_score:30,credibility:'High',
+  reason:"Genuine, well-described Java experience, but in test automation rather than building services. A keyword match would rank him highly; the work itself doesn't match a backend developer role.",
+  credibility_evidence:"Parallel runs on Selenium Grid and REST Assured contract tests across 14 microservices read as real work, and the dates are consistent. Here 'Java' means writing tests, not services.",
+  notice_flag:'Likely immediate — last role ended Jun 2026',location:'Whitefield, Bengaluru — matches',relevant_exp:'~3.3 yrs test automation; no development',
+  domain_signals:['Selenium and TestNG framework in Java','REST Assured tests for 14 microservices'],
+  red_flags:['No application development work'],
+  verify_questions:['Have you written any production service code, even a small internal tool?','Of the 14 services you tested, which would you want to build yourself, and how would you design its main API?']}
+};
+
+function loadDemo(stay){$('#jdTitle').value=DEMO_JD.title;$('#jdText').value=DEMO_JD.text;$('#jdMust').value=DEMO_JD.must;$('#jdNice').value=DEMO_JD.nice;$('#jdMin').value=DEMO_JD.min;$('#jdMax').value=DEMO_JD.max;$('#jdLoc').value=DEMO_JD.loc;$('#jdMode').value=DEMO_JD.mode;$('#jdType').value=DEMO_JD.type;$('#jdImm').checked=DEMO_JD.imm;let n=0;DEMO_RES.forEach(([f,t])=>{if(!S.cands.some(c=>c.file===f)){addCand(f,t);n++;}});audit('Sample data loaded',n+' fictional resumes');if(DEMO&&!S.lens){S.lens=DEMO_LENS;renderLens();}updateSession();if(stay===true)return;toast('Sample data loaded — five fictional resumes. Start with the privacy review.');tab('review');}
+
+/* step-by-step navigation at the bottom of each step */
+const STEPS=[['brief','Brief'],['cands','Add resumes'],['review','Privacy review'],['screen','Screening'],['short','Shortlist']];
+function buildNav(){STEPS.forEach(([id],i)=>{const prev=STEPS[i-1],next=STEPS[i+1],d=document.createElement('div');d.className='stepnav';d.innerHTML=`<span>${prev?`<button class="btn quiet" onclick="tab('${prev[0]}')">← Back</button>`:''}</span><span>${next?`<button class="btn" onclick="tab('${next[0]}')">Continue → ${next[1]}</button>`:''}</span>`;$('#t-'+id).appendChild(d);});}
+
+buildNav();
+if(DEMO){document.title='HireProof — Demo';$('#demoBar').classList.remove('hidden');$('#upPanel').classList.add('hidden');$('#demoUp').classList.remove('hidden');$('#provPanel').classList.add('hidden');$('#demoKeys').classList.remove('hidden');S.privacy.idleMin=0;loadDemo(true);}
+renderProviders();renderCands();updateSession();
+</script>
+</body>
+</html>
